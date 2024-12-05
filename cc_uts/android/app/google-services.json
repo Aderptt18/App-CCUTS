@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "339458886880",
+    "project_id": "cc-uts",
+    "storage_bucket": "cc-uts.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:339458886880:android:0b1b61bc255f7b1ed95485",
+        "android_client_info": {
+          "package_name": "com.CCUTS"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDbSbPHFhzz8KwqknkAPb8oe1GO5yPBVMs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
