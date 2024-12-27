@@ -1,8 +1,20 @@
+buildscript {
+    ext.kotlin_version = '1.5.31' // Cambia esta línea a la versión que necesitas
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        // otras dependencias
+    }
+}
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
+    
 }
 
 rootProject.buildDir = '../build'
@@ -11,7 +23,7 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(':app')
-}
+} 
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
