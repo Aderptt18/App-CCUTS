@@ -1,4 +1,4 @@
-package cc_uts
+package com.CCUTS
 
 import io.flutter.embedding.android.FlutterActivity
 
