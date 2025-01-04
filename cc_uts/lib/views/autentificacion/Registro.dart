@@ -1,4 +1,4 @@
-import 'package:cc_uts/controllers/Pantallas.dart';
+import 'package:cc_uts/controlador/Pantallas.dart';
 import 'package:flutter/material.dart';
 
 class registro extends StatelessWidget {

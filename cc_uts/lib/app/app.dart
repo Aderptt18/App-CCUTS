@@ -1,4 +1,5 @@
 import 'package:cc_uts/views/autentificacion/Acceso.dart';
+import 'package:cc_uts/widgets/widget_tree.dart';
 import 'package:flutter/material.dart';
 
 class MyApp extends StatelessWidget {
@@ -38,7 +39,7 @@ class _SplashScreenState extends State<SplashScreen>
     Future.delayed(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const Acceso()),
+        MaterialPageRoute(builder: (context) => const WidgetTree()),
       );
     });
   }
