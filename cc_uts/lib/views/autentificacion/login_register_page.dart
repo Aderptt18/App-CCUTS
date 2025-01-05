@@ -1,5 +1,6 @@
 import 'package:cc_uts/servicios/Autenticacion.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -47,20 +48,32 @@ class _LoginPageState extends State<LoginPage> {
     return const Text('');
   }
 
-  Widget _imagen(){
-    return Image.asset(
-      'assets/Logo.png', // Ruta al logo en assets
-      height: 120, // Altura del logo
+  Widget _imagen() {
+    return ClipOval(
+      child: Image.asset(
+        'assets/Logo.png', // Ruta al logo en assets
+        height: 120, // Altura del logo
+        width: 120, // Ancho del logo para mantener la proporción
+        fit: BoxFit.cover, // Ajustar la imagen para cubrir el contenedor
+      ),
+    );
+  }
+
+  Widget _espacio(double size) {
+    return SizedBox(
+      height: size,
     );
   }
 
   Widget _entryField(String title, TextEditingController controller) {
     return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: title,
-      ),
-    );
+        controller: controller,
+        obscureText: title == 'Contraseña', // Ocultar texto si es contraseña
+        decoration: InputDecoration(
+          labelText: title,
+          border: UnderlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(vertical: 10.0),
+        ));
   }
 
   Widget _errorMessage() {
@@ -72,6 +85,13 @@ class _LoginPageState extends State<LoginPage> {
         onPressed: isLogin
             ? signInWithEmailAndPassword
             : createUserWithEmailAndPassword,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
+        ),
         child: Text(isLogin ? 'Login' : 'Register'));
   }
 
@@ -82,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
             isLogin = !isLogin;
           });
         },
-        child: Text(isLogin ? 'Register instead ' : 'Login isntead'));
+        child: Text(isLogin ? 'Regístrate' : 'Inicir sesión'));
   }
 
   @override
@@ -100,8 +120,10 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             _imagen(),
-            _entryField('Email', _controllerEmail),
-            _entryField('Password', _controllerPassword),
+            _espacio(150),
+            _entryField('Correo electrónico', _controllerEmail),
+            _entryField('Contraseña', _controllerPassword),
+            _espacio(50),
             _errorMessage(),
             _submitButton(),
             _loginOrRegisterButton(),

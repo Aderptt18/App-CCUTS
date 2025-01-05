@@ -1,10 +1,71 @@
+import 'package:cc_uts/views/perfil/Perfil.dart';
+import 'package:cc_uts/views/principal/Publicacion/CrearPublicacion.dart';
+import 'package:cc_uts/views/principal/Publicacion/Publicaciones.dart';
+import 'package:cc_uts/views/principal/Repositorio.dart';
+import 'package:cc_uts/views/principal/chats/ListaChat.dart';
 import 'package:flutter/material.dart';
 
-class pantallas extends StatelessWidget {
-  const pantallas({super.key});
+class Pantallas extends StatefulWidget {
+  const Pantallas({super.key});
+
+  @override
+  State<Pantallas> createState() => _PantallasState();
+}
+
+class _PantallasState extends State<Pantallas> {
+  int _paginaActual = 0;
+
+  // Lista de páginas correspondientes a cada ítem del BottomNavigationBar
+  final List<Widget> _paginas = [
+    Publicaciones(),
+    Repositorio(),
+    CrearPublicacion(),
+    ListaChat(),
+    Perfil()
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return Scaffold(
+        body: _paginas[_paginaActual],
+        bottomNavigationBar: BottomNavigationBar(
+          onTap: (index) {
+            setState(() {
+              _paginaActual = index;
+            });
+          },
+          currentIndex: _paginaActual,
+          type: BottomNavigationBarType.fixed, // Evita la animación del color
+          backgroundColor: Colors.green, // Fondo verde
+          items: [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home,
+                  color: _paginaActual == 0 ? Colors.green[800] : Colors.black),
+              label: 'Publicaciones',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.book,
+                  color: _paginaActual == 1 ? Colors.green[800] : Colors.black),
+              label: 'Repositorio',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.add,
+                  color: _paginaActual == 2 ? Colors.green[800] : Colors.black),
+              label: 'Crear',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat,
+                  color: _paginaActual == 3 ? Colors.green[800] : Colors.black),
+              label: 'Chats',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person,
+                  color: _paginaActual == 4 ? Colors.green[800] : Colors.black),
+              label: 'Perfil',
+            ),
+          ],
+          unselectedItemColor: Colors.black,
+          selectedItemColor: Colors.green[1000], // Ícono seleccionado más oscuro
+        ));
   }
 }
