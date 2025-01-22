@@ -1,4 +1,4 @@
-import 'package:cc_uts/servicios/Autenticacion.dart';
+import 'package:cc_uts/servicios/firebase/Autenticacion.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 

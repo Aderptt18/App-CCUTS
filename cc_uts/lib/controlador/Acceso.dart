@@ -1,5 +1,5 @@
 import 'package:cc_uts/controlador/Pantallas.dart';
-import 'package:cc_uts/servicios/Autenticacion.dart';
+import 'package:cc_uts/servicios/firebase/Autenticacion.dart';
 import 'package:cc_uts/views/autentificacion/login_register_page.dart';
 import 'package:flutter/material.dart';
 

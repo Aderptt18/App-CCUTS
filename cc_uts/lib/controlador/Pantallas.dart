@@ -65,7 +65,8 @@ class _PantallasState extends State<Pantallas> {
             ),
           ],
           unselectedItemColor: Colors.black,
-          selectedItemColor: Colors.green[1000], // Ícono seleccionado más oscuro
+          selectedItemColor:
+              Colors.green[1000], // Ícono seleccionado más oscuro
         ));
   }
 }

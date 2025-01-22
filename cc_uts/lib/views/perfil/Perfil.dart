@@ -1,14 +1,60 @@
-import 'package:cc_uts/servicios/Autenticacion.dart';
+import 'dart:io';
+
+import 'package:cc_uts/servicios/firebase/Autenticacion.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 class Perfil extends StatelessWidget {
   Perfil({super.key});
+
+  //variables
+  String url = '';
+  File? imagen_a_subir;
+  final firebase = FirebaseFirestore.instance;
   final User? user = Auth().currentUser;
 
+  //Controladores de texto
+  final nombreController = TextEditingController();
+  final correoController = TextEditingController();
+  final telefonoController = TextEditingController();
+  final direccionController = TextEditingController();
+  
+
+  //metodos
   Future<void> signOut() async {
     await Auth().signOut();
   }
+
+  Widget _title() {
+    return const Text(' ');
+  }
+
+  Widget _userUid() {
+    return Text(user?.email ?? 'User email');
+  }
+
+  Widget _singOutButton() {
+    return ElevatedButton(
+      onPressed: signOut,
+      child: const Text('Sign Out'),
+    );
+  }
+
+  perfilUsuario() async{
+    try {
+      await firebase.collection('usuarios').doc().set({
+        'nombre': nombreController.text,
+        'correo': correoController.text,
+        'telefono': telefonoController.text,
+        'direccion': direccionController.text,
+        'imagen': url,
+        'uid': user?.uid,
+      });
+    }catch (e) {
+      print("error.. " + e.toString());
+    }
+  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +88,7 @@ class Perfil extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Edit Profile Button
                 ElevatedButton.icon(
                   onPressed: () {
@@ -50,7 +96,8 @@ class Perfil extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -65,7 +112,6 @@ class Perfil extends StatelessWidget {
             ),
           ),
 
-          // Publications Section
           Container(
             width: double.infinity,
             color: Colors.green,
@@ -124,6 +170,7 @@ class Perfil extends StatelessWidget {
               },
             ),
           ),
+          _singOutButton()
         ],
       ),
     );

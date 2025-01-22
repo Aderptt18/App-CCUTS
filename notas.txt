@@ -3,3 +3,10 @@ Botones principales: Verde medio (#4CAF50 en claro) y un verde oscuro más satur
 Botones secundarios o acentos: Verde claro como #81C784 en modo claro, y en oscuro podríamos suavizarlo a #66BB6A.
 Texto en botones o íconos: Blanco puro (#FFFFFF) o un verde muy claro en modo oscuro (#A5D6A7).
 Cuadros de texto o campos de entrada: Un borde verde suave en claro (#A5D6A7) y un borde más oscuro pero similar (#66BB6A) en oscuro.
+
+
+
+		APUNTES
+1. iniciar sesión o crear cuenta
+ -verificación en dos pasos
+ -cambiar el widget para que permita más cosas 
