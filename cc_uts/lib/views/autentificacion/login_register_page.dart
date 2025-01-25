@@ -56,6 +56,11 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> createUserWithEmailAndPassword() async {
     if (!mounted) return; // Verificar si el widget está montado
 
+    if (_controllerPassword.text.length < 6) {
+      _showErrorMessage("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
     if (_controllerPassword.text != _controllerConfirmPassword.text) {
       if (mounted) {
         // Verificar antes de llamar setState
@@ -63,6 +68,12 @@ class _LoginPageState extends State<LoginPage> {
           confirmarContrasena = false;
         });
       }
+      return;
+    }
+
+    if (!RegExp(r'^3\d{9}$').hasMatch(_controllerTelefono.text)) {
+      _showErrorMessage(
+          "El teléfono es inválido");
       return;
     }
 
@@ -114,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
             'uid': userCredential.user!.uid,
             'chats': [],
             'publicaciones': [],
-            'misArticulos': []
+            'misArchivos': []
           });
           print("Usuario creado con éxito");
         } catch (e) {
@@ -187,10 +198,6 @@ class _LoginPageState extends State<LoginPage> {
         ));
   }
 
-  Widget _errorMessage() {
-    return Text(errorMesage == '' ? '' : 'Humm ? $errorMesage');
-  }
-
   void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -247,44 +254,58 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          height: MediaQuery.of(context).size.height,
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              _espacio(50),
-              if (isLogin) ...[
-                _imagenLogo(),
-                _espacio(120),
-                _entryField('Correo electrónico', _controllerEmail),
-                _entryField('Contraseña', _controllerPassword),
-                _espacio(20),
-              ] else ...[
-                obtenerImagen == null ? _imagenLogo() : _imagenSeleccionada(),
-                _subirImagen(),
-                _espacio(50),
-                _entryField('Nombre', _controllerNombre),
-                _entryField('Correo electrónico', _controllerEmail),
-                _entryField('Contraseña', _controllerPassword),
-                _entryField('Confirmar contraseña', _controllerConfirmPassword),
-                if (!confirmarContrasena) ...[
-                  _espacio(10),
-                  _errorContrasena(),
-                ] else
-                  ...[],
-                _entryField('Dirección', _controllerDireccion),
-                _entryField('Teléfono', _controllerTelefono),
-                _espacio(40),
-              ],
-              _submitButton(),
-              _loginOrRegisterButton(),
-            ],
-          ),
-        ),
+      body: LayoutBuilder(
+        //permite que la pantalla sea scrollable
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
+              ),
+              child: IntrinsicHeight(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      _espacio(50),
+                      if (isLogin) ...[
+                        _imagenLogo(),
+                        _espacio(120),
+                        _entryField('Correo electrónico', _controllerEmail),
+                        _entryField('Contraseña', _controllerPassword),
+                        _espacio(20),
+                      ] else ...[
+                        obtenerImagen == null
+                            ? _imagenLogo()
+                            : _imagenSeleccionada(),
+                        _subirImagen(),
+                        _espacio(50),
+                        _entryField('Nombre', _controllerNombre),
+                        _entryField('Correo electrónico', _controllerEmail),
+                        _entryField('Contraseña', _controllerPassword),
+                        _entryField(
+                            'Confirmar contraseña', _controllerConfirmPassword),
+                        if (!confirmarContrasena) ...[
+                          _espacio(10),
+                          _errorContrasena(),
+                        ] else
+                          ...[], //este no hace nada
+                        _entryField('Dirección', _controllerDireccion),
+                        _entryField('Teléfono', _controllerTelefono),
+                        _espacio(40),
+                      ],
+                      _submitButton(),
+                      _loginOrRegisterButton(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
