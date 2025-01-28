@@ -1,9 +1,186 @@
 import 'dart:io';
 
+import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
 import 'package:cc_uts/servicios/firebase/Autenticacion.dart';
+import 'package:cc_uts/views/perfil/EditarPerfil.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+
+class Perfil extends StatefulWidget {
+  const Perfil({super.key});
+
+  @override
+  State<Perfil> createState() => _PerfilState();
+}
+
+class _PerfilState extends State<Perfil> {
+  Map<String, dynamic> userData = {};
+
+ @override
+ void initState() {
+   super.initState();
+   _cargarDatosUsuario();
+ }
+
+ Future<void> _cargarDatosUsuario() async {
+   String? uid = await AlmacenamientoUid.getUID();
+   if (uid != null) {
+     DocumentSnapshot doc = await FirebaseFirestore.instance
+         .collection('Usuarios')
+         .doc(uid)
+         .get();
+     
+     if (doc.exists) {
+       setState(() {
+         userData = doc.data() as Map<String, dynamic>;
+       });
+     }
+   }
+ }
+
+
+  Widget _signOut() {
+    return ElevatedButton(
+      onPressed: () {
+        Auth().signOut();
+      },
+      child: const Text('Cerrar Sesión'),
+    );
+  }
+ @override
+ Widget build(BuildContext context) {
+   return Scaffold(
+     appBar: AppBar(
+       title: Text(''),
+       backgroundColor: Colors.green,
+       actions: [
+         TextButton(
+           onPressed: () {
+             Navigator.push(
+               context,
+               MaterialPageRoute(
+                 builder: (context) => EditarPerfil(),
+               ),
+             );
+           },
+           child: Text('Editar', style: TextStyle(color: Colors.black)),
+         ),
+       ],
+     ),
+     body: SingleChildScrollView(
+       child: Padding(
+         padding: EdgeInsets.all(20),
+         child: Column(
+           crossAxisAlignment: CrossAxisAlignment.start,
+           children: [
+             Center(
+               child: CircleAvatar(
+                 radius: 80,
+                 backgroundImage: NetworkImage(userData['imagen'] ?? ''),
+               ),
+             ),
+             SizedBox(height: 40),
+             _buildInfoRow('Nombre:', userData['nombre'] ?? ''),
+             _buildInfoRow('Correo', userData['correo'] ?? ''),
+             _buildInfoRow('Telefono', userData['telefono'] ?? ''),
+             _buildInfoRow('Dirección', userData['direccion'] ?? ''),
+             _signOut(),
+           ],
+         ),
+       ),
+     ),
+   );
+ }
+
+ Widget _buildInfoRow(String label, String value) {
+   return Padding(
+     padding: EdgeInsets.symmetric(vertical: 10),
+     child: Row(
+       crossAxisAlignment: CrossAxisAlignment.start,
+       children: [
+         Text(
+           label,
+           style: TextStyle(
+             fontSize: 24,
+             fontWeight: FontWeight.bold,
+           ),
+         ),
+         SizedBox(width: 20),
+         Expanded(
+           child: Text(
+             value,
+             style: TextStyle(fontSize: 24),
+           ),
+         ),
+       ],
+     ),
+   );
+ }
+}
+
+
+
+/*
+class Perfil extends StatefulWidget {
+  const Perfil({super.key});
+
+  @override
+  State<Perfil> createState() => _PerfilState();
+}
+
+class _PerfilState extends State<Perfil> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Información de Usuarios'),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('Usuarios').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Ocurrió un error al cargar los datos.'),
+            );
+          }
+
+          if (!snapshot.hasData) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          final usuarios = snapshot.data!.docs;
+
+          return ListView.builder(
+            itemCount: usuarios.length,
+            itemBuilder: (context, index) {
+              final usuario = usuarios[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: NetworkImage(usuario['imagen']),
+                ),
+                title: Text(usuario['nombre']),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Correo: ${usuario['correo']}'),
+                    Text('Teléfono: ${usuario['telefono']}'),
+                    Text('Dirección: ${usuario['direccion']}'),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+
 class Perfil extends StatelessWidget {
   Perfil({super.key});
 
@@ -176,3 +353,5 @@ class Perfil extends StatelessWidget {
     );
   }
 }
+*/
+

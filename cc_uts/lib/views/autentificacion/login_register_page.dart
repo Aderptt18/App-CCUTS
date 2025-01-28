@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cc_uts/controlador/Imagenes/SeleccionarImagen.dart';
 import 'package:cc_uts/controlador/Imagenes/SubirImagenFirebase.dart';
+import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
 import 'package:cc_uts/servicios/firebase/Autenticacion.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -43,7 +44,13 @@ class _LoginPageState extends State<LoginPage> {
         email: _controllerEmail.text,
         password: _controllerPassword.text,
       );
+
+      // Guardar el UID del usuario en el almacenamiento local
+      await AlmacenamientoUid.saveUID(userCredential.user!.uid);
+
       // Aquí puedes hacer algo con userCredential si lo necesitas
+
+      
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMesage = e.message;
@@ -127,6 +134,10 @@ class _LoginPageState extends State<LoginPage> {
             'publicaciones': [],
             'misArchivos': []
           });
+
+          await AlmacenamientoUid.saveUID(userCredential.user!.uid); //almacena el uid del usuario
+
+
           print("Usuario creado con éxito");
         } catch (e) {
           print("Error al crear documento en Firestore: $e");

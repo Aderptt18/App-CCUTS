@@ -16,7 +16,36 @@ perfil
 -implementar que en teléfono solo pueden haber números (9:47 p. m. 23/01/2025)
 -verificación en dos pasos (último)
 -implementar la recuperación de contraseña (último)
+-si el usuario no sube foto poner null en el campo imagen y 
 
 
 Pefil
 -implementar la edición de datos personales (último)
+
+
+
+	PEDAZOS DE CÓDIGO PARA RECORDAR
+
+-manejo del uid del usuario con hive:
+ -guardar el uid al hacer login o registrarse:
+await HiveStorage.saveUID(userCredential.user!.uid);
+
+ -obtener uid guardado:
+String? uid = await HiveStorage.getUID();
+if (uid != null) {
+  print('UID guardado: $uid');
+} else {
+  print('No hay UID guardado.');
+}
+
+ -eliminar el uid al hacer el logout
+await HiveStorage.removeUID();
+print('UID eliminado.');
+
+ -cerrar cajas (opcional, al salir de la app):
+await HiveStorage.closeBoxes();
+
+
+
+
+
