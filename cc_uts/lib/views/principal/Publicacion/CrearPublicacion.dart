@@ -1,5 +1,6 @@
 import 'package:cc_uts/controlador/Imagenes/SeleccionarImagen.dart';
 import 'package:cc_uts/controlador/Imagenes/SubirImagenFirebase.dart';
+import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,6 +14,7 @@ class CrearPublicacion extends StatefulWidget {
 }
 
 class _CrearPublicacionState extends State<CrearPublicacion> {
+
   bool _chat = false;
   File? _image;
   String? _imageUrl;
@@ -47,6 +49,8 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
   }
 
   Future<void> _publish() async {
+
+    String? _uid = await AlmacenamientoUid.getUID();
     if (_titleController.text.isEmpty || _messageController.text.isEmpty)
       return;
 
@@ -60,7 +64,7 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
         'mensaje': _messageController.text,
         'imagenUrl': _imageUrl,
         'timestamp': FieldValue.serverTimestamp(),
-        'userId': 'CURRENT_USER_ID',
+        'userId': _uid,
       });
 
       Navigator.pop(context);
@@ -167,21 +171,30 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
                 child:
                     Text('Crear chat', style: TextStyle(color: Colors.black)),
               ),
-              Padding(
+                Padding(
                   padding: EdgeInsets.only(top: 100),
-                  child: ElevatedButton(
-                      onPressed: _publish,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF4CAF50),
-                        padding: EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      child: Text('PUBLICAR', style: TextStyle(color: Colors.black)))),
-            ],
-          ),
-        ),
+                  child: ElevatedButton.icon(
+                  onPressed: _publish,
+                  style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF4CAF50),
+                  padding: EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  ),
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                    Text('PUBLICAR', style: TextStyle(color: Colors.black)),
+                    SizedBox(width: 8),
+                    Icon(Icons.send, color: Colors.black),
+                    ],
+                  ),
+                  icon: SizedBox.shrink(), // This is to keep the icon parameter but make it empty
+                  )),
+                ],
+                ),
+              ),
       ),
     );
   }
