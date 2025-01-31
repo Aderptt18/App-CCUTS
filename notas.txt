@@ -11,16 +11,35 @@ Cuadros de texto o campos de entrada: Un borde verde suave en claro (#A5D6A7) y 
 Iniciar sesión o crear cuenta
 -cambiar el widget para que permita más cosas (9:22 p. m. 22/01/2025)
 -implementar los datos locales para el manejo de la información de  
-perfil
+perfil (8:51 p. m. 27/01/2025)
 -implementar mensaje de información si la contraseña no es igual o mayor a 6 dígitos (9:10 p. m. 22/01/2025)
 -implementar que en teléfono solo pueden haber números (9:47 p. m. 23/01/2025)
+
 -verificación en dos pasos (último)
 -implementar la recuperación de contraseña (último)
 -si el usuario no sube foto poner null en el campo imagen y 
 
 
-Pefil
--implementar la edición de datos personales (último)
+
+Entre pantallas
+-configurar para que las se pueda navegar entre pantallas moviendo hacia los lados 
+
+
+Perfil
+-implementar que los datos personales se guarden en local para que no tenga que esperar a que carguen
+-implementar la edición de datos personales 
+
+
+Crear publicación 
+-tener contenedor solo para titulo (8:30 p. m. 30/01/2025)
+-tener contenedor para la descripción sobre la publicación que sea pequeño pero que se expanda con el tamaño del texto (8:30 p. m. 30/01/2025)
+-configurar la carga de imagen (8:30 p. m. 30/01/2025)
+-configurar la carga de imagen a firebase (8:30 p. m. 30/01/2025)
+-mostrar un mensaje de alerta cuando el usuario presione el botón de crear chat (8:53 p. m. 30/01/2025)
+-crear la colección de publicaciones (8:31 p. m. 30/01/2025)
+-con los datos guardados en local obtener el nombre de ususario para agregarlo como campo en el documento
+-crear la colección de chats 
+
 
 
 
@@ -45,7 +64,8 @@ print('UID eliminado.');
  -cerrar cajas (opcional, al salir de la app):
 await HiveStorage.closeBoxes();
 
-
+-retornar a la página anterior
+Navigator.pop(context);
 
 
 

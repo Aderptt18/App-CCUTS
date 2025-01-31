@@ -96,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
       String imageUrl = '';
       if (obtenerImagen != null && mounted) {
         try {
-          imageUrl = await subirImagen(
+          imageUrl = await subirImagenPerfil(
             obtenerImagen!,
             (String urlI) {
               if (mounted) {

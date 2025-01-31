@@ -1,3 +1,4 @@
+import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class Auth {
@@ -29,7 +30,7 @@ class Auth {
   }
 
   Future<void> signOut() async {
+    await AlmacenamientoUid.removeUID();
     await _firebaseAuth.signOut();
   }
-  
 }

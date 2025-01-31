@@ -9,3 +9,4 @@ Future<XFile?> getImage() async {
   // Se devuelve la imagen seleccionada (puede ser null si no se selecciona ninguna)
   return image;
 }
+ 
