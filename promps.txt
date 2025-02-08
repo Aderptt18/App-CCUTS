@@ -1,0 +1,8 @@
+De acuerdo a la imagen que te mandé necesito que me ayudes a generar el código para tenerla tal cuál como se ve en la imagen, ya que es la pantalla para crear publicaciones dentro de mi app, pues está pantalla contará con widgets para el titulo, widgets para ingresar texto, widget para cargar la imagen y dos botones 
+-Quiero que tenga el appBar pero solo para el color, pues lo quiero vacío.
+-El titulo lo puedes dejar tal cuál 
+-El widget de titulo debe tener la palabra "Titulo..." como hintText, este widget debe ser dinámico en el sentido de que inicialmente va a tener el tamaño que se muestra en pantalla pero al momento de sobrepasar el tamaño el widget se alargue hacia abajo dependiendo la cantidad de texto.
+-El widget de mensaje debe tener la palabra "Mensaje..." como hintText, este widget debe ser dinámico en el sentido de que inicialmente va a tener el tamaño que se muestra en pantalla pero al momento de sobrepasar el tamaño el widget se alargue hacia abajo dependiendo la cantidad de texto.
+-El widget que se ve como un contenedor vacío debe ser para subir una imagen presionando el botón que está dentro del mismo en la parte inferior derecha 
+-El widget de "Crear chat" simplemente sirve como botón que hace algo básico
+-Por último el widget "Publicar" es el encargado de mandar todo a firebase

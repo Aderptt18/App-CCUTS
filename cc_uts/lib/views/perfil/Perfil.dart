@@ -19,7 +19,7 @@ class _PerfilState extends State<Perfil> {
     super.initState();
     _cargarDatosUsuario();
   }
-
+  
   Future<void> _cargarDatosUsuario() async {
     String? uid = await AlmacenamientoUid.getUID();
     if (uid != null) {

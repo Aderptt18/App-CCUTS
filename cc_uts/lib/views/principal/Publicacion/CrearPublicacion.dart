@@ -14,10 +14,12 @@ class CrearPublicacion extends StatefulWidget {
 }
 
 class _CrearPublicacionState extends State<CrearPublicacion> {
-
   bool _chat = false;
+  bool _isLoading = false; // Para mostrar un indicador de carga
   File? _image;
   String? _imageUrl;
+  String nombre = '';
+
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
 
@@ -32,54 +34,128 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
     }
   }
 
+  void _removeImage() {
+    setState(() => _image = null); // Eliminar la imagen seleccionada
+  }
+
+  Future<String> _nombreUsuario() async {
+  String? uid = await AlmacenamientoUid.getUID();
+  if (uid != null) {
+    DocumentSnapshot doc = await FirebaseFirestore.instance
+        .collection('Usuarios')
+        .doc(uid)
+        .get();
+
+    if (doc.exists) {
+      return (doc.data() as Map<String, dynamic>)['nombre'] ?? '';
+    }
+  }
+  return ''; // Retorna una cadena vacía si no hay datos
+}
+
   void _crearChat() {
-    setState(() {
-      _chat = !_chat;
-    });
-    if (_chat) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+    setState(() => _chat = !_chat);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
         content: Text(
-          'Se ha generado el chat correctamente!!!',
+          _chat
+              ? 'Se ha generado el chat correctamente!!!'
+              : 'Chat desactivado',
           style: TextStyle(color: Colors.black),
         ),
-        backgroundColor: Color(0xFFB8E6B9)),
-      );
-    }
+        backgroundColor: Color(0xFFB8E6B9),
+      ),
+    );
   }
 
   Future<void> _publish() async {
-
-    String? _uid = await AlmacenamientoUid.getUID();
-    if (_titleController.text.isEmpty || _messageController.text.isEmpty)
+    if (_titleController.text.isEmpty || _messageController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Por favor, completa todos los campos'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
+    }
+
+    setState(() => _isLoading = true);
 
     try {
       if (_image != null) {
         await subirImagenPublicacion(_image!, updateUrl, _titleController);
       }
 
+      String? _uid = await AlmacenamientoUid.getUID();
       await FirebaseFirestore.instance.collection('Publicaciones').add({
         'titulo': _titleController.text,
         'mensaje': _messageController.text,
         'imagenUrl': _imageUrl,
         'timestamp': FieldValue.serverTimestamp(),
         'userId': _uid,
+        'nombreUsuario': await _nombreUsuario(),
+        'chatActivo': _chat,
       });
-
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Se ha publicado correctamente'),
-            backgroundColor: Color(0xFFB8E6B9)),
-      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Error al publicar, intentalo de nuevo'),
-            backgroundColor: Colors.red),
+          content: Text('Error al publicar, inténtalo de nuevo'),
+          backgroundColor: Colors.red,
+        ),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+    _titleController.clear();
+    _messageController.clear();
+    _image = null;
+  }
+
+  Widget _buildImagePicker() {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        color: Color(0xFFB8E6B9),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Stack(
+        children: [
+          if (_image != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Image.file(
+                _image!,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_image != null) // Mostrar el botón de eliminar solo si hay una imagen
+                  FloatingActionButton(
+                    mini: true,
+                    backgroundColor: Colors.red,
+                    child: Icon(Icons.delete, color: Colors.white),
+                    onPressed: _removeImage,
+                  ),
+                SizedBox(width: 8), // Espacio entre los botones
+                FloatingActionButton(
+                  mini: true,
+                  backgroundColor: Color(0xFF4CAF50),
+                  child: Icon(Icons.image, color: Colors.white),
+                  onPressed: _handleImageSelection,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -99,7 +175,7 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
               TextField(
                 controller: _titleController,
                 decoration: InputDecoration(
-                  hintText: 'Titulo...',
+                  hintText: 'Título...',
                   filled: true,
                   fillColor: Color(0xFFB8E6B9),
                   border: OutlineInputBorder(
@@ -124,46 +200,13 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
                 maxLines: null,
               ),
               SizedBox(height: 16),
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  color: Color(0xFFB8E6B9),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Stack(
-                  children: [
-                    if (_image != null)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(15),
-                        child: Image.file(
-                          _image!,
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    Positioned(
-                      right: 8,
-                      bottom: 8,
-                      child: FloatingActionButton(
-                        mini: true,
-                        backgroundColor: Color(0xFFB8E6B9),
-                        child: Icon(Icons.image),
-                        onPressed: _handleImageSelection,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildImagePicker(),
               SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
-                  _crearChat();
-                },
+                onPressed: _crearChat,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _chat
-                      ? Color.fromARGB(255, 86, 220, 88)
-                      : Color(0xFFB8E6B9),
+                  backgroundColor:
+                      _chat ? Color(0xFF4CAF50) : Color(0xFFB8E6B9),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15),
                   ),
@@ -171,30 +214,27 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
                 child:
                     Text('Crear chat', style: TextStyle(color: Colors.black)),
               ),
-                Padding(
-                  padding: EdgeInsets.only(top: 100),
-                  child: ElevatedButton.icon(
-                  onPressed: _publish,
+              Padding(
+                padding: EdgeInsets.only(top: 100),
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _publish,
                   style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF4CAF50),
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    backgroundColor: Color(0xFF4CAF50),
+                    padding: EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                   ),
-                  ),
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                    Text('PUBLICAR', style: TextStyle(color: Colors.black)),
-                    SizedBox(width: 8),
-                    Icon(Icons.send, color: Colors.black),
-                    ],
-                  ),
-                  icon: SizedBox.shrink(), // This is to keep the icon parameter but make it empty
-                  )),
-                ],
+                  icon: _isLoading
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Icon(Icons.send, color: Colors.black),
+                  label:
+                      Text('PUBLICAR', style: TextStyle(color: Colors.black)),
                 ),
               ),
+            ],
+          ),
+        ),
       ),
     );
   }

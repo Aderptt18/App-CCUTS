@@ -15,6 +15,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  
   String? errorMesage = '';
   bool confirmarContrasena = true;
   bool isLogin = true;
@@ -321,3 +322,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
