@@ -11,26 +11,47 @@ General
 -organizar mejor los archivos 
 -pasar todo a español
 
+
+Entre pantallas
+-configurar para que las se pueda navegar entre pantallas moviendo hacia los lados (9:26 p. m. 10/02/2025)
+
+
 Iniciar sesión o crear cuenta
 -cambiar el widget para que permita más cosas (9:22 p. m. 22/01/2025)
 -implementar los datos locales para el manejo de la información de  
 perfil (8:51 p. m. 27/01/2025)
 -implementar mensaje de información si la contraseña no es igual o mayor a 6 dígitos (9:10 p. m. 22/01/2025)
 -implementar que en teléfono solo pueden haber números (9:47 p. m. 23/01/2025)
--mirar la longitud permitida en firebase
+
+-mirar la longitud permitida en firebase para la contraseña 
 -verificación en dos pasos (último)
 -implementar la recuperación de contraseña (último)
--si el usuario no sube foto poner null en el campo imagen y 
+-si el usuario no sube foto poner "null" en el campo imagen y poner una silueta de una persona como foto de perfil
 
 
+Repositorio
+-poner la barra de búsqueda
+-mostrar los 10 últimos archivos que se subieron al firebase
+-la forma de mostrar los archivos deben mostrar una imagen que diga pdf, el titulo y la descripción breve y el botón de descargar con el símbolo de descarga
+-poner el botón de subir archivos 
+-poner restricciones para que no suban archivos innecesarios
 
-Entre pantallas
--configurar para que las se pueda navegar entre pantallas moviendo hacia los lados 
+
+Subir archivos
+-implementar que solo acepten archivos pdf 
+-poner titulo 
+-poner descripción breve 
+-poner descripción de lo que el usuario quiera 
+-agregar la fecha en la que lo publicó 
+-fecha en la que lo entregó o lo publicó 
+-
 
 
 Perfil
+-arreglar la vista porque se ve feo 
 -implementar que los datos personales se guarden en local para que no tenga que esperar a que carguen
 -implementar la edición de datos personales 
+-implementar la vista de la lista de publicaciones que ha hecho el usuario 
 
 
 Crear publicación 
@@ -40,14 +61,19 @@ Crear publicación
 -configurar la carga de imagen a firebase (8:30 p. m. 30/01/2025)
 -mostrar un mensaje de alerta cuando el usuario presione el botón de crear chat (8:53 p. m. 30/01/2025)
 -crear la colección de publicaciones (8:31 p. m. 30/01/2025)
+-con los datos guardados en local obtener el nombre de ususario para agregarlo como campo en el documento (9:25 p. m. 10/02/2025)
+-guardar el id de la publicación en la lista que tiene el campo "publicaciones" en la colección "Usuarios". (9:34 p. m. 11/02/2025)
 
--con los datos guardados en local obtener el nombre de ususario para agregarlo como campo en el documento
 -crear la colección de chats 
 
 
+Publicaciones
+-
 
 
-	PEDAZOS DE CÓDIGO PARA RECORDAR
+
+
+		PEDAZOS DE CÓDIGO PARA RECORDAR
 
 -manejo del uid del usuario con hive:
  -guardar el uid al hacer login o registrarse:
@@ -70,6 +96,6 @@ await HiveStorage.closeBoxes();
 
 -retornar a la página anterior
 Navigator.pop(context);
-
+ 
 
 

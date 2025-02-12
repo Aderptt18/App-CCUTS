@@ -15,10 +15,9 @@ class CrearPublicacion extends StatefulWidget {
 
 class _CrearPublicacionState extends State<CrearPublicacion> {
   bool _chat = false;
-  bool _isLoading = false; // Para mostrar un indicador de carga
+  bool _isLoading = false;
   File? _image;
   String? _imageUrl;
-  String nombre = '';
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
@@ -35,32 +34,30 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
   }
 
   void _removeImage() {
-    setState(() => _image = null); // Eliminar la imagen seleccionada
+    setState(() => _image = null);
   }
 
   Future<String> _nombreUsuario() async {
-  String? uid = await AlmacenamientoUid.getUID();
-  if (uid != null) {
-    DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('Usuarios')
-        .doc(uid)
-        .get();
+    String? uid = await AlmacenamientoUid.getUID();
+    if (uid != null) {
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
+          .get();
 
-    if (doc.exists) {
-      return (doc.data() as Map<String, dynamic>)['nombre'] ?? '';
+      if (doc.exists) {
+        return (doc.data() as Map<String, dynamic>)['nombre'] ?? '';
+      }
     }
+    return '';
   }
-  return ''; // Retorna una cadena vacía si no hay datos
-}
 
   void _crearChat() {
     setState(() => _chat = !_chat);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          _chat
-              ? 'Se ha generado el chat correctamente!!!'
-              : 'Chat desactivado',
+          _chat ? 'Se ha generado el chat correctamente!!!' : 'Chat desactivado',
           style: TextStyle(color: Colors.black),
         ),
         backgroundColor: Color(0xFFB8E6B9),
@@ -87,7 +84,13 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
       }
 
       String? _uid = await AlmacenamientoUid.getUID();
-      await FirebaseFirestore.instance.collection('Publicaciones').add({
+      if (_uid == null) {
+        throw Exception("No se pudo obtener el UID del usuario");
+      }
+
+      DocumentReference publicacionRef = await FirebaseFirestore.instance
+          .collection('Publicaciones')
+          .add({
         'titulo': _titleController.text,
         'mensaje': _messageController.text,
         'imagenUrl': _imageUrl,
@@ -96,19 +99,36 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
         'nombreUsuario': await _nombreUsuario(),
         'chatActivo': _chat,
       });
+
+      String publicacionId = publicacionRef.id;
+
+      await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(_uid)
+          .update({
+        'publicaciones': FieldValue.arrayUnion([publicacionId]),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Publicación creada con éxito'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al publicar, inténtalo de nuevo'),
+          content: Text('Error al publicar: $e'),
           backgroundColor: Colors.red,
         ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+
     _titleController.clear();
     _messageController.clear();
-    _image = null;
+    setState(() => _image = null);
   }
 
   Widget _buildImagePicker() {
@@ -136,14 +156,14 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (_image != null) // Mostrar el botón de eliminar solo si hay una imagen
+                if (_image != null)
                   FloatingActionButton(
                     mini: true,
                     backgroundColor: Colors.red,
                     child: Icon(Icons.delete, color: Colors.white),
                     onPressed: _removeImage,
                   ),
-                SizedBox(width: 8), // Espacio entre los botones
+                SizedBox(width: 8),
                 FloatingActionButton(
                   mini: true,
                   backgroundColor: Color(0xFF4CAF50),
