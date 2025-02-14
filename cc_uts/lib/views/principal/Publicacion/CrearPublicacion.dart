@@ -52,6 +52,21 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
     return '';
   }
 
+  Future<String> _fotoUsuario() async {
+    String? uid = await AlmacenamientoUid.getUID();
+    if (uid != null) {
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
+          .get();
+
+      if (doc.exists) {
+        return (doc.data() as Map<String, dynamic>)['imagen'] ?? '';
+      }
+    }
+    return '';
+  }
+
   void _crearChat() {
     setState(() => _chat = !_chat);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -97,6 +112,7 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
         'timestamp': FieldValue.serverTimestamp(),
         'userId': _uid,
         'nombreUsuario': await _nombreUsuario(),
+        'fotoUsuario': await _fotoUsuario(),
         'chatActivo': _chat,
       });
 
@@ -125,7 +141,6 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-
     _titleController.clear();
     _messageController.clear();
     setState(() => _image = null);
