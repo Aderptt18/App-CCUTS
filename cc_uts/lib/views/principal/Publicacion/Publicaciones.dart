@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class Publicaciones extends StatelessWidget {
   const Publicaciones({super.key});
@@ -10,68 +12,108 @@ class Publicaciones extends StatelessWidget {
         title: const Text('Publicaciones'),
         backgroundColor: Colors.green,
       ),
-      body: ListView.builder(
-        itemCount: 1, // Ejemplo con una publicación
-        itemBuilder: (context, index) {
-          return Card(
-            margin: const EdgeInsets.all(8),
-            color: Colors.green[200],
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // User info
-                  Row(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('Publicaciones')
+            .orderBy('timestamp',
+                descending: true) // Ordenar por fecha (más reciente primero)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(
+                child: Text('No hay publicaciones disponibles.'));
+          }
+
+          final publicaciones = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: publicaciones.length,
+            itemBuilder: (context, index) {
+              final publicacion =
+                  publicaciones[index].data() as Map<String, dynamic>;
+              final nombreUsuario = publicacion['nombreUsuario'];
+              final fotoUsuario = publicacion['fotoUsuario'];
+              final mensaje = publicacion['mensaje'];
+              final imagenUrl = publicacion['imagenUrl'];
+              final chatActivo = publicacion['chatActivo'];
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CircleAvatar(
-                        child: Icon(Icons.person),
+                      // Foto y nombre del usuario
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundImage:
+                                CachedNetworkImageProvider(fotoUsuario),
+                            radius: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            nombreUsuario,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Juan Pérez',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      const SizedBox(height: 10),
+
+                      // Mensaje de la publicación
+                      Text(
+                        mensaje,
+                        style: const TextStyle(fontSize: 14),
                       ),
+                      const SizedBox(height: 10),
+
+                      // Imagen de la publicación (si existe)
+                      if (imagenUrl != null && imagenUrl.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: imagenUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: 200,
+                            placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator()),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.error),
+                          ),
+                        ),
+
+                      // Botón de chat (si chatActivo es true)
+                      if (chatActivo == true)
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: IconButton(
+                            icon:
+                                const Icon(Icons.message, color: Colors.green),
+                            onPressed: () {
+                              // Navegar a la pantalla de chat
+                              // Navigator.push(...);
+                            },
+                          ),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  
-                  // Content
-                  const Text('Necesito ayuda con mi proyecto sobre el cambio climático, no he podido realizarlo por motivos de falta de información'),
-                  const SizedBox(height: 12),
-                  
-                  // Image placeholder
-                  Container(
-                     height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.image, size: 50),
-                  ),
-                  
-                  // Interaction buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.chat_bubble_outline),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add_comment),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.thumb_up_outlined),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         },
       ),
