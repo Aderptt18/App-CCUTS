@@ -1,168 +1,376 @@
+import 'package:cc_uts/controlador/pdf/SeleccionarPDF.dart';
+import 'package:cc_uts/controlador/pdf/SubirPdfFirebase.dart';
+import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/gestures.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
+import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class Repositorio extends StatefulWidget {
-  const Repositorio({super.key});
-
+class SubirDocumentoScreen extends StatefulWidget {
   @override
-  State<Repositorio> createState() => _RepositorioState();
+  _SubirDocumentoScreenState createState() => _SubirDocumentoScreenState();
 }
 
-class _RepositorioState extends State<Repositorio> {
-  final Map<String, bool> _expandedStates = {}; // Para controlar el estado de "Leer más..."
+class _SubirDocumentoScreenState extends State<SubirDocumentoScreen> {
+  final _formKey = GlobalKey<FormState>();
+  PlatformFile? _selectedPDF;
+  bool _isLoading = false;
+  int _uploadsToday = 0;
+  final int _maxUploadsPerDay = 3;
+  bool _fechaSeleccionada = false;
+  final _tituloController = TextEditingController();
+  final _autorController = TextEditingController();
+  final _descripcionController = TextEditingController();
+  final _resumenController = TextEditingController();
+  final _palabrasClaveController = TextEditingController();
+  final _institucionController = TextEditingController();
+  DateTime _fechaDocumento = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUploadsCount();
+  }
+
+  Future<void> _loadUploadsCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastUploadDate = prefs.getString('lastUploadDate') ?? '';
+    if (lastUploadDate == DateTime.now().toString().split(' ')[0]) {
+      setState(() {
+        _uploadsToday = prefs.getInt('uploadsToday') ?? 0;
+      });
+    } else {
+      await prefs.setInt('uploadsToday', 0);
+      setState(() {
+        _uploadsToday = 0;
+      });
+    }
+  }
+
+  Future<void> _updateUploadsCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+        'lastUploadDate', DateTime.now().toString().split(' ')[0]);
+    await prefs.setInt('uploadsToday', _uploadsToday + 1);
+  }
+
+  Future<void> _selectPDF() async {
+    final result = await getPDF();
+    if (result != null) {
+      setState(() {
+        _selectedPDF = result;
+      });
+    }
+  }
+
+  void _clearSelectedPDF() {
+    setState(() {
+      _selectedPDF = null;
+    });
+  }
+
+  Future<void> _publicarDocumento() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedPDF == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Por favor seleccione un archivo PDF')),
+      );
+      return;
+    }
+
+    if (_uploadsToday >= _maxUploadsPerDay) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Has alcanzado el límite de subidas por hoy')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      String? uid = await AlmacenamientoUid.getUID();
+      if (uid == null) throw Exception('Usuario no autenticado');
+
+      final String url = await subirPDF(
+        _selectedPDF!,
+        (String url) {},
+        _tituloController,
+      );
+
+      await FirebaseFirestore.instance.collection('Documentos').add({
+        'titulo': _tituloController.text,
+        'autor': _autorController.text,
+        'descripcion': _descripcionController.text,
+        'resumen': _resumenController.text,
+        'palabras': _palabrasClaveController.text,
+        'institucion': _institucionController.text,
+        'fechadocumento': _fechaDocumento,
+        'pdf':
+            '${DateTime.now().millisecondsSinceEpoch}_${_tituloController.text}.pdf',
+        'urlPdf': url,
+        'timestamp': FieldValue.serverTimestamp(),
+        'uidUsuario': uid,
+      });
+
+      await _updateUploadsCount();
+      setState(() => _uploadsToday++);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Documento publicado exitosamente')),
+      );
+
+      _formKey.currentState!.reset();
+      setState(() {
+        _selectedPDF = null;
+        _fechaDocumento = DateTime.now();
+        _fechaSeleccionada = false;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al publicar el documento: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+
+    _tituloController.clear();
+    _autorController.clear();
+    _descripcionController.clear();
+    _resumenController.clear();
+    _palabrasClaveController.clear();
+    _institucionController.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Publicaciones'),
-        backgroundColor: const Color(0xFFB8E6B9),
+        title: Text('Subir documento'),
+        backgroundColor: Colors.green,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('Publicaciones')
-            .orderBy('timestamp', descending: true) // Ordenar por fecha (más reciente primero)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No hay publicaciones disponibles.'));
-          }
-
-          final publicaciones = snapshot.data!.docs;
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: publicaciones.length,
-            itemBuilder: (context, index) {
-              final publicacion = publicaciones[index].data() as Map<String, dynamic>;
-              final publicacionId = publicaciones[index].id; // ID de la publicación
-              final nombreUsuario = publicacion['nombreUsuario'];
-              final fotoUsuario = publicacion['fotoUsuario'];
-              final mensaje = publicacion['mensaje'];
-              final imagenUrl = publicacion['imagenUrl'];
-              final chatActivo = publicacion['chatActivo'];
-
-              // Inicializar el estado de "Leer más..." si no existe
-              _expandedStates.putIfAbsent(publicacionId, () => false);
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                color: const Color(0xFFB8E6B9), // Color de fondo del cuadro
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Foto y nombre del usuario
-                      Row(
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildTextField(
+                controller: _tituloController,
+                hintText: 'Título...',
+                maxLength: 150,
+              ),
+              _buildTextField(
+                controller: _autorController,
+                hintText: 'Autor...',
+                maxLength: 100,
+              ),
+              _buildTextField(
+                controller: _descripcionController,
+                hintText: 'Descripción breve..',
+                maxLength: 300,
+              ),
+              _buildTextField(
+                controller: _resumenController,
+                hintText: 'Resumen...',
+                maxLength: 3000,
+                expandable: true,
+              ),
+              _buildTextField(
+                controller: _palabrasClaveController,
+                hintText: 'Palabras clave...',
+                maxLength: 50,
+              ),
+              _buildTextField(
+                controller: _institucionController,
+                hintText: 'Institución...',
+                maxLength: 200,
+              ),
+              InkWell(
+                onTap: () async {
+                  final DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: _fechaDocumento,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _fechaDocumento = picked;
+                      _fechaSeleccionada =
+                          true; // Marcamos que se seleccionó una fecha
+                    });
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  child: Text(
+                    _fechaSeleccionada
+                        ? '${_fechaDocumento.day.toString().padLeft(2, '0')}/${_fechaDocumento.month.toString().padLeft(2, '0')}/${_fechaDocumento.year}'
+                        : 'Fecha del documento...',
+                    style: TextStyle(
+                      color:
+                          _fechaSeleccionada ? Colors.black87 : Colors.black54,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              Container(
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.green[100],
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Stack(
+                  children: [
+                    if (_selectedPDF != null)
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/archivo-pdf.png',
+                              height: 40,
+                            ),
+                            SizedBox(width: 10),
+                            Flexible(
+                              child: Text(
+                                _selectedPDF!.name,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Positioned(
+                      right: 10,
+                      bottom: 10,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          CircleAvatar(
-                            backgroundImage: CachedNetworkImageProvider(fotoUsuario),
-                            radius: 20,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            nombreUsuario,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                          if (_selectedPDF != null)
+                            Container(
+                              width: 40,
+                              height: 40,
+                              margin: EdgeInsets.only(right: 5),
+                              child: FloatingActionButton(
+                                backgroundColor: Colors.red,
+                                mini: true,
+                                child: Icon(Icons.delete),
+                                onPressed: _clearSelectedPDF,
+                              ),
+                            ),
+                          Container(
+                            width: 40,
+                            height: 40,
+                            child: FloatingActionButton(
+                              backgroundColor: Colors.green,
+                              mini: true,
+                              child: Icon(Icons.add),
+                              onPressed: _selectPDF,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-
-                      // Mensaje de la publicación con "Leer más..." integrado
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final text = mensaje;
-                          final isExpanded = _expandedStates[publicacionId]!;
-                          final maxLength = 200; // Longitud inicial del texto
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              RichText(
-                                text: TextSpan(
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: isExpanded
-                                          ? text
-                                          : (text.length > maxLength
-                                              ? '${text.substring(0, maxLength)}... '
-                                              : text),
-                                    ),
-                                    if (text.length > maxLength)
-                                      TextSpan(
-                                        text: isExpanded ? 'Leer menos' : 'Leer más...',
-                                        style: const TextStyle(
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        recognizer: TapGestureRecognizer()
-                                          ..onTap = () {
-                                            setState(() {
-                                              _expandedStates[publicacionId] = !isExpanded;
-                                            });
-                                          },
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Imagen de la publicación (si existe)
-                      if (imagenUrl != null && imagenUrl.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: CachedNetworkImage(
-                            imageUrl: imagenUrl,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: 200,
-                            placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                            errorWidget: (context, url, error) => const Icon(Icons.error),
-                          ),
-                        ),
-
-                      // Botón de chat (si chatActivo es true)
-                      if (chatActivo == true)
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: IconButton(
-                            icon: const Icon(Icons.message, color: Colors.green),
-                            onPressed: () {
-                              // Navegar a la pantalla de chat
-                              // Navigator.push(...);
-                            },
-                          ),
-                        ),
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
                   ),
                 ),
-              );
-            },
-          );
+                onPressed: _isLoading ? null : _publicarDocumento,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Publicar',
+                        style: TextStyle(fontSize: 18, color: Colors.black)),
+                    SizedBox(width: 8),
+                    Icon(Icons.send),
+                    if (_isLoading)
+                      Container(
+                        width: 20,
+                        height: 20,
+                        margin: EdgeInsets.only(left: 10),
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Documentos restantes hoy: ${_maxUploadsPerDay - _uploadsToday}',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required int maxLength,
+    bool expandable = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        maxLength: maxLength,
+        maxLines: expandable ? null : 1,
+        decoration: InputDecoration(
+          hintText: hintText,
+          filled: true,
+          fillColor: Colors.green[100],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(25),
+            borderSide: BorderSide.none,
+          ),
+          counterText: '',
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Este campo es obligatorio';
+          }
+          return null;
         },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _tituloController.dispose();
+    _autorController.dispose();
+    _descripcionController.dispose();
+    _resumenController.dispose();
+    _palabrasClaveController.dispose();
+    _institucionController.dispose();
+    super.dispose();
   }
 }

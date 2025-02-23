@@ -44,16 +44,18 @@ Subir archivos
 -palabras clave 
 -fecha en la que lo entregó o lo publicó 
 -institución de donde la realizó
--nombre del usuario como autor 
 -agregar la fecha en la que lo publicó 
 -poner un límite de 3 subidas por día
 -poner un mensaje de cuántos le quedan por subir 
 -implementar que solo acepten archivos pdf 
 -implementar la animación de carga cuando se mande a firebase
 -poner un icono de "enviar" en el botón  "publicar"
+-cuando se cargue el pdf mostrar un botón que permita borrar el pdf cargado por si el usuario lo quiere cambiar
+-todos los campos deben ser obligatorios
+
 -colección
- -id del usuario
- -nombre del usuario
+ -uid del usuario
+ -autor
  -link del pdf en firebase
  -titulo
  -descripción breve
@@ -101,7 +103,7 @@ Publicaciones
 await HiveStorage.saveUID(userCredential.user!.uid);
 
  -obtener uid guardado:
-String? uid = await HiveStorage.getUID();
+String? uid = await NombreDelARchivo.getUID();
 if (uid != null) {
   print('UID guardado: $uid');
 } else {

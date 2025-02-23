@@ -19,7 +19,7 @@ class _PantallasState extends State<Pantallas> {
   // Lista de páginas correspondientes a cada ítem del BottomNavigationBar
   final List<Widget> _paginas = [
     Publicaciones(),
-    Repositorio(),
+    SubirDocumentoScreen(),
     CrearPublicacion(),
     ListaChat(),
     Perfil()
