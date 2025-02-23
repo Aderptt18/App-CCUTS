@@ -1,1 +1,16 @@
-Necesito ayuda con mi proyecto sobre el cambio climático, no he podido realizarlo por motivos de falta de información 
+ahora necesito que una pantalla donde pueda ver todas las publicaciones que hay en la colección "Publicaciones" en firestore database. Esta es la colección que se creó para publicaciones:
+DocumentReference publicacionRef = await FirebaseFirestore.instance
+          .collection('Publicaciones')
+          .add({
+        'titulo': _titleController.text,
+        'mensaje': _messageController.text,
+        'imagenUrl': _imageUrl,
+        'timestamp': FieldValue.serverTimestamp(),
+        'userId': _uid,
+        'nombreUsuario': await _nombreUsuario(),
+        'fotoUsuario': await _fotoUsuario(),
+        'chatActivo': _chat,
+      });
+
+necesito que uses esos datos para hacer la pantalla donde se empleará como una cola donde el más reciente se muestre de primero, entonces quiero que se vea de acuerdo a la imagen que te pasé, done los cuadros son el formato en el que se va a ver, respeta los colores, el que color de los cuadros es este verde 0xFFB8E6B9, cada publicación va a tener el nombre con la foto del que la publicó (aparece en la colección). luego va a mostrar el mensaje (como se muestra en la imagen) pero necesito que se muestre el principio del texto y que si es usuarios quiere leer más le dé al botón "Leer más..." y se muestre el resto del texto pero el botón debe ser parte del texto , si el usuario subió una foto muestra la foto en un tamaño que se adapte a cualquier imagen, en la colección hay un campo llamado chatactivo, si es true se debe mostrar un botón con el icono de mensaje, esté debe estar situado en la parte inferior derecha de cada publicación solo si "chatActivo" es true.
+acuerdese de que la imagen solo es un boceto a seguir 

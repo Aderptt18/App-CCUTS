@@ -38,14 +38,30 @@ Repositorio
 
 
 Subir archivos
--implementar que solo acepten archivos pdf 
 -poner titulo 
--poner descripción breve 
--poner descripción de lo que el usuario quiera 
--agregar la fecha en la que lo publicó 
+-poner descripción breve de máximo 150 caracteres 
+-poner resumen
+-palabras clave 
 -fecha en la que lo entregó o lo publicó 
--
-
+-institución de donde la realizó
+-nombre del usuario como autor 
+-agregar la fecha en la que lo publicó 
+-poner un límite de 3 subidas por día
+-poner un mensaje de cuántos le quedan por subir 
+-implementar que solo acepten archivos pdf 
+-implementar la animación de carga cuando se mande a firebase
+-poner un icono de "enviar" en el botón  "publicar"
+-colección
+ -id del usuario
+ -nombre del usuario
+ -link del pdf en firebase
+ -titulo
+ -descripción breve
+ -resumen
+ -palabras clave
+ -institución
+ -fecha del documento
+ -fecha de publicación 
 
 Perfil
 -arreglar la vista porque se ve feo 
@@ -68,7 +84,12 @@ Crear publicación
 
 
 Publicaciones
--
+-que se carguen de arriba hacia abajo cada vez que haya un nuevo documento en "publicaciones"
+-que se muestre la foto del usuario y el nombre de quién lo subió 
+-mostrar todo el texto, pero implementar que se vea un texto corto y si el usuario quiere lo puede ampliar para que no ocupe tanto espacio.
+-mostrar imágenes que fueron cargadas al firebase
+-implementar el botón de chat
+
 
 
 

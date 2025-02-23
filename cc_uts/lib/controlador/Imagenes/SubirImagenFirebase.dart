@@ -13,7 +13,7 @@ Future<String> subirImagenPerfil(File image, Function(String) updateUrl, TextEdi
     final Reference ref = storage.ref().child("Perfiles").child(nameFile);
     
     // Configurar metadata para la imagen
-    final SettableMetadata metadata = SettableMetadata(
+    final SettableMetadata metadata = SettableMetadata( 
       contentType: 'image/jpeg',  // Ajusta según el tipo de imagen
       customMetadata: {'picked-file-path': image.path}
     );
