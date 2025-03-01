@@ -38,22 +38,21 @@ Repositorio
 
 
 Subir archivos
--poner titulo 
--poner descripción breve de máximo 150 caracteres 
--poner resumen
--palabras clave 
--fecha en la que lo entregó o lo publicó 
--institución de donde la realizó
--agregar la fecha en la que lo publicó 
--poner un límite de 3 subidas por día
--poner un mensaje de cuántos le quedan por subir 
--implementar que solo acepten archivos pdf 
--implementar la animación de carga cuando se mande a firebase
--poner un icono de "enviar" en el botón  "publicar"
--cuando se cargue el pdf mostrar un botón que permita borrar el pdf cargado por si el usuario lo quiere cambiar
--todos los campos deben ser obligatorios
-
--colección
+-poner titulo (10:46 p. m. 24/02/2025)
+-poner descripción breve de máximo 150 caracteres (10:46 p. m. 24/02/2025)
+-poner resumen (10:46 p. m. 24/02/2025)
+-palabras clave (10:46 p. m. 24/02/2025)
+-fecha en la que lo entregó o lo publicó (10:46 p. m. 24/02/2025)
+-institución de donde la realizó (10:46 p. m. 24/02/2025)
+-agregar la fecha en la que lo publicó (10:46 p. m. 24/02/2025)
+-poner un límite de 3 subidas por día (10:46 p. m. 24/02/2025)
+-poner un mensaje de cuántos le quedan por subir  (10:46 p. m. 24/02/2025)
+-implementar que solo acepten archivos pdf (10:46 p. m. 24/02/2025)
+-implementar la animación de carga cuando se mande a firebase (10:46 p. m. 24/02/2025)
+-poner un icono de "enviar" en el botón  "publicar" (10:46 p. m. 24/02/2025)
+-cuando se cargue el pdf mostrar un botón que permita borrar el pdf cargado por si el usuario lo quiere cambiar (10:46 p. m. 24/02/2025)
+-todos los campos deben ser obligatorios (10:46 p. m. 24/02/2025)
+-colección (10:46 p. m. 24/02/2025)
  -uid del usuario
  -autor
  -link del pdf en firebase

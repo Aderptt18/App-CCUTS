@@ -5,15 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
-import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SubirDocumentoScreen extends StatefulWidget {
+class SubirDocumento extends StatefulWidget {
   @override
   _SubirDocumentoScreenState createState() => _SubirDocumentoScreenState();
 }
 
-class _SubirDocumentoScreenState extends State<SubirDocumentoScreen> {
+class _SubirDocumentoScreenState extends State<SubirDocumento> {
   final _formKey = GlobalKey<FormState>();
   PlatformFile? _selectedPDF;
   bool _isLoading = false;
@@ -135,12 +134,14 @@ class _SubirDocumentoScreenState extends State<SubirDocumentoScreen> {
       setState(() => _isLoading = false);
     }
 
+    Navigator.pop(context);
+  /*
     _tituloController.clear();
     _autorController.clear();
     _descripcionController.clear();
     _resumenController.clear();
     _palabrasClaveController.clear();
-    _institucionController.clear();
+    _institucionController.clear();*/
   }
 
   @override

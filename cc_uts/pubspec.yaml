@@ -48,6 +48,10 @@ dependencies:
   file_picker: ^8.0.5
   intl: ^0.20.2
   shared_preferences: ^2.2.3
+  url_launcher: ^6.3.1
+  flutter_pdfview: ^1.4.0
+  flutter_downloader: ^1.11.8
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   change_app_package_name: ^1.1.0

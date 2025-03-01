@@ -1,7 +1,7 @@
 import 'package:cc_uts/views/perfil/Perfil.dart';
 import 'package:cc_uts/views/principal/Publicacion/CrearPublicacion.dart';
 import 'package:cc_uts/views/principal/Publicacion/Publicaciones.dart';
-import 'package:cc_uts/views/principal/Repositorio.dart';
+import 'package:cc_uts/views/principal/repositorio/Repositorio.dart';
 import 'package:cc_uts/views/principal/chats/ListaChat.dart';
 import 'package:flutter/material.dart';
 
@@ -19,7 +19,7 @@ class _PantallasState extends State<Pantallas> {
   // Lista de páginas correspondientes a cada ítem del BottomNavigationBar
   final List<Widget> _paginas = [
     Publicaciones(),
-    SubirDocumentoScreen(),
+    BuscarDocumentos(),
     CrearPublicacion(),
     ListaChat(),
     Perfil()
