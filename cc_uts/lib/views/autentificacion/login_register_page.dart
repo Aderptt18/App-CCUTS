@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _controllerPassword = TextEditingController();
   final TextEditingController _controllerConfirmPassword =
       TextEditingController();
-  final TextEditingController _controllerDireccion = TextEditingController();
+  final TextEditingController _controllerCarrera = TextEditingController();
   final TextEditingController _controllerTelefono = TextEditingController();
 
   //ingresar
@@ -128,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
             'nombre': _controllerNombre.text,
             'correo': _controllerEmail.text,
             'telefono': _controllerTelefono.text,
-            'direccion': _controllerDireccion.text,
+            'carrera': _controllerCarrera.text,
             'imagen': imageUrl,
             'uid': userCredential.user!.uid,
             'chats': [],
@@ -305,7 +305,7 @@ class _LoginPageState extends State<LoginPage> {
                           _errorContrasena(),
                         ] else
                           ...[], //este no hace nada
-                        _entryField('Dirección', _controllerDireccion),
+                        _entryField('Carrera', _controllerCarrera),
                         _entryField('Teléfono', _controllerTelefono),
                         _espacio(40),
                       ],

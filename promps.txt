@@ -1,4 +1,27 @@
-Necesito una pantalla para buscar documentos que se subieron con esta pantalla que se encuentra lib\views\principal\repositorio\SubirArchivo.dart:
+si tengo esta colección para los usuarios:
+await firebase
+              .collection('Usuarios')
+              .doc(userCredential.user!.uid)
+              .set({
+            'nombre': _controllerNombre.text,
+            'correo': _controllerEmail.text,
+            'telefono': _controllerTelefono.text,
+            'carrera': _controllerCarrera.text,
+            'imagen': imageUrl,
+            'uid': userCredential.user!.uid,
+            'chats': [],
+            'publicaciones': [],
+            'misArchivos': []
+          });
+
+necesito llenar los arrays de los campos publicaciones[] y misArchivos[], con los id de las colecciones que se generan al crear una publicación o publicar archivos, para ello se obtiene el id de la colección de Usuarios con este pedazo de código: 
+
+import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
+
+String? uid = await AlmacenamientoUid.getUID(); 
+
+
+este es el archivo de publicar archivos:
 
 import 'package:cc_uts/controlador/pdf/SeleccionarPDF.dart';
 import 'package:cc_uts/controlador/pdf/SubirPdfFirebase.dart';
@@ -136,12 +159,14 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
       setState(() => _isLoading = false);
     }
 
+    Navigator.pop(context);
+  /*
     _tituloController.clear();
     _autorController.clear();
     _descripcionController.clear();
     _resumenController.clear();
     _palabrasClaveController.clear();
-    _institucionController.clear();
+    _institucionController.clear();*/
   }
 
   @override
@@ -376,22 +401,281 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
   }
 }
 
-entonces necesito una pantalla que tenga la barra de búsqueda que busque por el campo "titulo" de la colección:
- await FirebaseFirestore.instance.collection('Documentos').add({
-        'titulo': _tituloController.text,
-        'autor': _autorController.text,
-        'descripcion': _descripcionController.text,
-        'resumen': _resumenController.text,
-        'palabras': _palabrasClaveController.text,
-        'institucion': _institucionController.text,
-        'fechadocumento': _fechaDocumento,
-        'pdf':
-            '${DateTime.now().millisecondsSinceEpoch}_${_tituloController.text}.pdf',
-        'urlPdf': url,
+
+este es el archivo para crear publicaciones:
+import 'package:cc_uts/controlador/Imagenes/SeleccionarImagen.dart';
+import 'package:cc_uts/controlador/Imagenes/SubirImagenFirebase.dart';
+import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+
+class CrearPublicacion extends StatefulWidget {
+  const CrearPublicacion({super.key});
+
+  @override
+  State<CrearPublicacion> createState() => _CrearPublicacionState();
+}
+
+class _CrearPublicacionState extends State<CrearPublicacion> {
+  bool _chat = false;
+  bool _isLoading = false;
+  File? _image;
+  String? _imageUrl;
+
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
+
+  void updateUrl(String url) {
+    setState(() => _imageUrl = url);
+  }
+
+  Future<void> _handleImageSelection() async {
+    final XFile? image = await getImage();
+    if (image != null) {
+      setState(() => _image = File(image.path));
+    }
+  }
+
+  void _removeImage() {
+    setState(() => _image = null);
+  }
+
+  Future<String> _nombreUsuario() async {
+    String? uid = await AlmacenamientoUid.getUID();
+    if (uid != null) {
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
+          .get();
+
+      if (doc.exists) {
+        return (doc.data() as Map<String, dynamic>)['nombre'] ?? '';
+      }
+    }
+    return '';
+  }
+
+  Future<String> _fotoUsuario() async {
+    String? uid = await AlmacenamientoUid.getUID();
+    if (uid != null) {
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
+          .get();
+
+      if (doc.exists) {
+        return (doc.data() as Map<String, dynamic>)['imagen'] ?? '';
+      }
+    }
+    return '';
+  }
+
+  void _crearChat() {
+    setState(() => _chat = !_chat);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _chat ? 'Se ha generado el chat correctamente!!!' : 'Chat desactivado',
+          style: TextStyle(color: Colors.black),
+        ),
+        backgroundColor: Color(0xFFB8E6B9),
+      ),
+    );
+  }
+
+  Future<void> _publish() async {
+    if (_titleController.text.isEmpty || _messageController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Por favor, completa todos los campos'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      if (_image != null) {
+        await subirImagenPublicacion(_image!, updateUrl, _titleController);
+      }
+
+      String? _uid = await AlmacenamientoUid.getUID();
+      if (_uid == null) {
+        throw Exception("No se pudo obtener el UID del usuario");
+      }
+
+      DocumentReference publicacionRef = await FirebaseFirestore.instance
+          .collection('Publicaciones')
+          .add({
+        'titulo': _titleController.text,
+        'mensaje': _messageController.text,
+        'imagenUrl': _imageUrl,
         'timestamp': FieldValue.serverTimestamp(),
-        'uidUsuario': uid,
+        'userId': _uid,
+        'nombreUsuario': await _nombreUsuario(),
+        'fotoUsuario': await _fotoUsuario(),
+        'chatActivo': _chat,
       });
 
-pero necesito que sea en tiempo real, pues quiero que busque cada similitud y la muestre dependiendo de cada letra que va escribiendo ir filtrando y mostrando las similutes , también necesito que haya un botón en la parte inferior derecha un botón que me dirija a la pantalla SubirDocumento. 
+      String publicacionId = publicacionRef.id;
 
+      await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(_uid)
+          .update({
+        'publicaciones': FieldValue.arrayUnion([publicacionId]),
+      });
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Publicación creada con éxito'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al publicar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+    _titleController.clear();
+    _messageController.clear();
+    setState(() => _image = null);
+  }
+
+  Widget _buildImagePicker() {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        color: Color(0xFFB8E6B9),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Stack(
+        children: [
+          if (_image != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Image.file(
+                _image!,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          Positioned(
+            right: 8,
+            bottom: 8,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_image != null)
+                  FloatingActionButton(
+                    mini: true,
+                    backgroundColor: Colors.red,
+                    child: Icon(Icons.delete, color: Colors.white),
+                    onPressed: _removeImage,
+                  ),
+                SizedBox(width: 8),
+                FloatingActionButton(
+                  mini: true,
+                  backgroundColor: Color(0xFF4CAF50),
+                  child: Icon(Icons.image, color: Colors.white),
+                  onPressed: _handleImageSelection,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Color(0xFF4CAF50),
+        elevation: 0,
+        title: Text('Crear publicación'),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  hintText: 'Título...',
+                  filled: true,
+                  fillColor: Color(0xFFB8E6B9),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                maxLines: null,
+              ),
+              SizedBox(height: 16),
+              TextField(
+                controller: _messageController,
+                decoration: InputDecoration(
+                  hintText: 'Mensaje...',
+                  filled: true,
+                  fillColor: Color(0xFFB8E6B9),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                maxLines: null,
+              ),
+              SizedBox(height: 16),
+              _buildImagePicker(),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _crearChat,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      _chat ? Color(0xFF4CAF50) : Color(0xFFB8E6B9),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                ),
+                child:
+                    Text('Crear chat', style: TextStyle(color: Colors.black)),
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: 100),
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _publish,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF4CAF50),
+                    padding: EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  icon: _isLoading
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Icon(Icons.send, color: Colors.black),
+                  label:
+                      Text('PUBLICAR', style: TextStyle(color: Colors.black)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
