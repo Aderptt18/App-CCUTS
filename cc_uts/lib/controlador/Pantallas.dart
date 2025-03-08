@@ -22,7 +22,7 @@ class _PantallasState extends State<Pantallas> {
     BuscarDocumentos(),
     CrearPublicacion(),
     ListaChat(),
-    Perfil()
+    PerfilUsuario()
   ];
 
   @override

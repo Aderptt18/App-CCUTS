@@ -98,7 +98,8 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
         _tituloController,
       );
 
-      await FirebaseFirestore.instance.collection('Documentos').add({
+      // Agregar documento a la colección Documentos
+      DocumentReference documentoRef = await FirebaseFirestore.instance.collection('Documentos').add({
         'titulo': _tituloController.text,
         'autor': _autorController.text,
         'descripcion': _descripcionController.text,
@@ -111,6 +112,17 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
         'urlPdf': url,
         'timestamp': FieldValue.serverTimestamp(),
         'uidUsuario': uid,
+      });
+
+      // Obtener el ID del documento creado
+      String documentoId = documentoRef.id;
+
+      // Actualizar el array misArchivos del usuario
+      await FirebaseFirestore.instance
+          .collection('Usuarios')
+          .doc(uid)
+          .update({
+        'misArchivos': FieldValue.arrayUnion([documentoId]),
       });
 
       await _updateUploadsCount();
