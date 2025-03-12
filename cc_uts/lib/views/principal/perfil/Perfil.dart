@@ -1,3 +1,4 @@
+import 'package:cc_uts/views/principal/perfil/EditarPerfil.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
@@ -5,14 +6,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class PerfilUsuarios extends StatefulWidget {
-  const PerfilUsuarios({Key? key}) : super(key: key);
+class PerfilUsuario extends StatefulWidget {
+  const PerfilUsuario({Key? key}) : super(key: key);
 
   @override
-  State<PerfilUsuarios> createState() => _PerfilUsuarioState();
+  State<PerfilUsuario> createState() => _PerfilUsuarioState();
 }
 
-class _PerfilUsuarioState extends State<PerfilUsuarios> with SingleTickerProviderStateMixin {
+class _PerfilUsuarioState extends State<PerfilUsuario> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String? uid;
   Map<String, dynamic>? userData;
@@ -137,7 +138,7 @@ class _PerfilUsuarioState extends State<PerfilUsuarios> with SingleTickerProvide
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => EditarPerfil(userData: userData),
+                      builder: (context) =>EditarPerfilScreen(),
                     ),
                   ).then((_) => _loadUserData());
                 },

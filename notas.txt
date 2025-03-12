@@ -30,11 +30,12 @@ perfil (8:51 p. m. 27/01/2025)
 
 
 Repositorio
--poner la barra de búsqueda
+-poner la barra de búsqueda (7:54 p. m. 27/02/2025)
 -mostrar los 10 últimos archivos que se subieron al firebase
 -la forma de mostrar los archivos deben mostrar una imagen que diga pdf, el titulo y la descripción breve y el botón de descargar con el símbolo de descarga
--poner el botón de subir archivos 
--poner restricciones para que no suban archivos innecesarios
+-poner el botón de subir archivos (10:24 p. m. 27/02/2025)
+-poner primero las palabras claves 
+
 
 
 Subir archivos
@@ -91,6 +92,15 @@ Publicaciones
 -mostrar imágenes que fueron cargadas al firebase
 -implementar el botón de chat
 
+
+
+FALTA:
+-poner la imagen de perfil si el usuario no quiere 
+-agregar cada publicación y documento en la colección de usuario y mostrarlos en la pantalla de perfil
+-poner la autenticación de dos pasos
+-poner el recuperar contraseña 
+-limitar la cantidad de documentos que se van a ver a los últimos 15 
+-agregar notificaciones para cada publicación 
 
 
 

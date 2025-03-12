@@ -1,8 +1,7 @@
-import 'package:cc_uts/views/perfil/Perfil.dart';
+import 'package:cc_uts/views/principal/perfil/Perfil.dart';
 import 'package:cc_uts/views/principal/Publicacion/CrearPublicacion.dart';
 import 'package:cc_uts/views/principal/Publicacion/Publicaciones.dart';
 import 'package:cc_uts/views/principal/repositorio/Repositorio.dart';
-import 'package:cc_uts/views/principal/chats/ListaChat.dart';
 import 'package:flutter/material.dart';
 
 class Pantallas extends StatefulWidget {
@@ -21,7 +20,6 @@ class _PantallasState extends State<Pantallas> {
     Publicaciones(),
     BuscarDocumentos(),
     CrearPublicacion(),
-    ListaChat(),
     PerfilUsuario()
   ];
 
@@ -73,14 +71,10 @@ class _PantallasState extends State<Pantallas> {
                 color: _paginaActual == 2 ? Colors.green[800] : Colors.black),
             label: 'Crear',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat,
-                color: _paginaActual == 3 ? Colors.green[800] : Colors.black),
-            label: 'Chats',
-          ),
+         
           BottomNavigationBarItem(
             icon: Icon(Icons.person,
-                color: _paginaActual == 4 ? Colors.green[800] : Colors.black),
+                color: _paginaActual == 3 ? Colors.green[800] : Colors.black),
             label: 'Perfil',
           ),
         ],
