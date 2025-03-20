@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
+
 class BuscarDocumentos extends StatefulWidget {
   @override
   _BuscarDocumentosState createState() => _BuscarDocumentosState();
@@ -33,45 +35,60 @@ class _BuscarDocumentosState extends State<BuscarDocumentos> {
 
   // Función para descargar el PDF
   Future<void> _descargarPDF(String url, String fileName) async {
-    // Solicitar permisos de almacenamiento
-    final status = await Permission.storage.request();
-    if (!status.isGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Permisos de almacenamiento denegados')),
-      );
-      return;
-    }
-
-    // Obtener la ruta de descarga
-    final directory = await getExternalStorageDirectory();
-    final path = directory?.path;
-
-    if (path == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo acceder al almacenamiento')),
-      );
-      return;
-    }
-
-    // Descargar el archivo
-    final taskId = await FlutterDownloader.enqueue(
-      url: url,
-      savedDir: path,
-      fileName: fileName,
-      showNotification: true,
-      openFileFromNotification: true,
+  // Solicitar permisos de almacenamiento
+  final status = await Permission.storage.request();
+  if (!status.isGranted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Permisos de almacenamiento denegados')),
     );
-
-    if (taskId != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Descarga iniciada')),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al iniciar la descarga')),
-      );
-    }
+    return;
   }
+
+  // Obtener la ruta de la carpeta de descargas
+  Directory? downloadsDir;
+  if (Platform.isAndroid) {
+    // En Android, usar la carpeta de descargas
+    downloadsDir = Directory('/storage/emulated/0/Download');
+  } else if (Platform.isIOS) {
+    // En iOS, usar la carpeta de documentos
+    downloadsDir = await getApplicationDocumentsDirectory();
+  } else {
+    // Fallback a la carpeta externa de almacenamiento
+    downloadsDir = await getExternalStorageDirectory();
+  }
+
+  final path = downloadsDir?.path;
+
+  if (path == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('No se pudo acceder al almacenamiento')),
+    );
+    return;
+  }
+
+  // Descargar el archivo
+  final taskId = await FlutterDownloader.enqueue(
+    url: url,
+    savedDir: path,
+    fileName: fileName,
+    showNotification: true,
+    openFileFromNotification: true,
+  );
+
+  if (taskId != null) {
+    // Mostrar mensaje informando al usuario que revise las notificaciones
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Descarga iniciada. Revisa las notificaciones para ver el progreso.'),
+        duration: Duration(seconds: 4),
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al iniciar la descarga')),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {

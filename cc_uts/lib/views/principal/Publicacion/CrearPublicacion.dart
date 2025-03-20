@@ -14,7 +14,6 @@ class CrearPublicacion extends StatefulWidget {
 }
 
 class _CrearPublicacionState extends State<CrearPublicacion> {
-  bool _chat = false;
   bool _isLoading = false;
   File? _image;
   String? _imageUrl;
@@ -67,19 +66,6 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
     return '';
   }
 
-  void _crearChat() {
-    setState(() => _chat = !_chat);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _chat ? 'Se ha generado el chat correctamente!!!' : 'Chat desactivado',
-          style: TextStyle(color: Colors.black),
-        ),
-        backgroundColor: Color(0xFFB8E6B9),
-      ),
-    );
-  }
-
   Future<void> _publish() async {
     if (_titleController.text.isEmpty || _messageController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -113,7 +99,6 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
         'userId': _uid,
         'nombreUsuario': await _nombreUsuario(),
         'fotoUsuario': await _fotoUsuario(),
-        'chatActivo': _chat,
       });
 
       String publicacionId = publicacionRef.id;
@@ -236,19 +221,6 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
               ),
               SizedBox(height: 16),
               _buildImagePicker(),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _crearChat,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      _chat ? Color(0xFF4CAF50) : Color(0xFFB8E6B9),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-                child:
-                    Text('Crear chat', style: TextStyle(color: Colors.black)),
-              ),
               Padding(
                 padding: EdgeInsets.only(top: 100),
                 child: ElevatedButton.icon(

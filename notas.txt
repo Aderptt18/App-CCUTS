@@ -95,12 +95,36 @@ Publicaciones
 
 
 FALTA:
--poner la imagen de perfil si el usuario no quiere 
--agregar cada publicación y documento en la colección de usuario y mostrarlos en la pantalla de perfil
+login
+-cambiar el botón de subir imagen en la parte de login, por un contorno al rededor de la imagen y el botón debe estar situado en la parte inferior derecha del 
+contorno
+-poner la imagen de perfil si el usuario no quiere poner foto propia
+-poner términos y condiciones (sobre el tratamiento de datos) al momento de crear cuenta
 -poner la autenticación de dos pasos
 -poner el recuperar contraseña 
+
+publicación
+-agregar cada publicación y documento en la colección de usuario y mostrarlos en la pantalla de perfil (7:39 p. m. 18/03/2025)
+-arreglar el appBar de publicaciones, falta cambiar el color al verde que se utilizó en todos (11:27 p. m. 18/03/2025)
+-quitar el botón de "entrar chat" (11:40 p. m. 18/03/2025)
+
+repositorio
 -limitar la cantidad de documentos que se van a ver a los últimos 15 
--agregar notificaciones para cada publicación 
+-arreglar los textField en la parte de subir documento
+-arreglar que los archivos sean descargados en la carpeta de descargas de los celulares 
+
+crear publicación
+-agregar notificaciones para cada publicación
+-quitar el botón de "crear chat" (11:40 p. m. 18/03/2025)
+
+perfil
+-agregar cada publicación y documento en la colección de usuario y mostrarlos en la pantalla de perfil
+
+
+
+
+
+
 
 
 

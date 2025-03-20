@@ -19,7 +19,7 @@ class _PublicacionesState extends State<Publicaciones> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Publicaciones'),
-        backgroundColor: const Color(0xFFB8E6B9),
+        backgroundColor: const Color(0xFF4CAF50),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -51,7 +51,6 @@ class _PublicacionesState extends State<Publicaciones> {
               final fotoUsuario = publicacion['fotoUsuario'];
               final mensaje = publicacion['mensaje'];
               final imagenUrl = publicacion['imagenUrl'];
-              final chatActivo = publicacion['chatActivo'];
 
               // Inicializar el estado de "Leer más..." si no existe
               _expandedStates.putIfAbsent(publicacionId, () => false);
@@ -141,19 +140,6 @@ class _PublicacionesState extends State<Publicaciones> {
                             height: 200,
                             placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
                             errorWidget: (context, url, error) => const Icon(Icons.error),
-                          ),
-                        ),
-
-                      // Botón de chat (si chatActivo es true)
-                      if (chatActivo == true)
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: IconButton(
-                            icon: const Icon(Icons.message, color: Colors.green),
-                            onPressed: () {
-                              // Navegar a la pantalla de chat
-                              // Navigator.push(...);
-                            },
                           ),
                         ),
                     ],
