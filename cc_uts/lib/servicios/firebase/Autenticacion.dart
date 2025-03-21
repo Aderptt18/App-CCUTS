@@ -2,7 +2,6 @@ import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class Auth {
-
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   User? get currentUser => _firebaseAuth.currentUser;
@@ -42,7 +41,33 @@ class Auth {
     );
   }
 
-  
+  // Método para cambiar la contraseña del usuario actual
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'No hay un usuario activo.',
+      );
+    }
 
-  
+    // Para cambiar la contraseña, primero debemos reautenticar al usuario
+    final credential = EmailAuthProvider.credential(
+      email: user.email!,
+      password: currentPassword,
+    );
+
+    try {
+      // Reautenticar usuario
+      await user.reauthenticateWithCredential(credential);
+
+      // Cambiar contraseña
+      await user.updatePassword(newPassword);
+    } catch (e) {
+      rethrow; // Propagar la excepción para manejarla en la UI
+    }
+  }
 }

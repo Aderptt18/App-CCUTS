@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
 import 'package:cc_uts/controlador/Imagenes/SeleccionarImagen.dart';
 import 'package:cc_uts/controlador/Imagenes/SubirImagenFirebase.dart';
+import 'package:cc_uts/servicios/firebase/Autenticacion.dart';
 
 class EditarPerfilScreen extends StatefulWidget {
   const EditarPerfilScreen({Key? key}) : super(key: key);
@@ -19,11 +21,22 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
   final TextEditingController _controllerTelefono = TextEditingController();
   final TextEditingController _controllerCarrera = TextEditingController();
   
+  // Controladores para cambio de contraseña
+  final TextEditingController _controllerCurrentPassword = TextEditingController();
+  final TextEditingController _controllerNewPassword = TextEditingController();
+  final TextEditingController _controllerConfirmPassword = TextEditingController();
+  
   String? imageUrl;
   String? currentImageUrl;
   File? _selectedImage;
   bool _isLoading = true;
   String? userId;
+  
+  // Variables para controlar la sección de cambio de contraseña
+  bool _showPasswordSection = false;
+  bool _obscureCurrentPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
   
   @override
   void initState() {
@@ -131,6 +144,13 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
         const SnackBar(content: Text('Perfil actualizado correctamente')),
       );
       
+      // Si hay datos de contraseña, intentar cambiar la contraseña
+      if (_controllerCurrentPassword.text.isNotEmpty && 
+          _controllerNewPassword.text.isNotEmpty &&
+          _controllerConfirmPassword.text.isNotEmpty) {
+        await _cambiarContrasena();
+      }
+      
       // Regresar a la pantalla anterior
       Navigator.pop(context);
     } catch (e) {
@@ -145,12 +165,156 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
     }
   }
   
+  Future<void> _cambiarContrasena() async {
+    // Verificar que las contraseñas coinciden
+    if (_controllerNewPassword.text != _controllerConfirmPassword.text) {
+      _showErrorMessage("Las contraseñas nuevas no coinciden");
+      return;
+    }
+    
+    // Verificar que la contraseña tenga al menos 6 caracteres
+    if (_controllerNewPassword.text.length < 6) {
+      _showErrorMessage("La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+    
+    try {
+      await Auth().changePassword(
+        currentPassword: _controllerCurrentPassword.text,
+        newPassword: _controllerNewPassword.text,
+      );
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Contraseña actualizada correctamente')),
+      );
+      
+      // Limpiar los campos de contraseña
+      _controllerCurrentPassword.clear();
+      _controllerNewPassword.clear();
+      _controllerConfirmPassword.clear();
+      
+    } catch (e) {
+      print("Error al cambiar contraseña: $e");
+      
+      // Mostrar mensaje de error más específico
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'wrong-password':
+            _showErrorMessage("La contraseña actual es incorrecta");
+            break;
+          case 'weak-password':
+            _showErrorMessage("La nueva contraseña es muy débil");
+            break;
+          case 'requires-recent-login':
+            _showErrorMessage("Esta operación es sensible. Por favor, cierre sesión y vuelva a iniciar sesión para cambiar la contraseña");
+            break;
+          default:
+            _showErrorMessage("Error al cambiar contraseña: ${e.message}");
+        }
+      } else {
+        _showErrorMessage("Error al cambiar contraseña");
+      }
+    }
+  }
+  
   void _showErrorMessage(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
     }
+  }
+  
+  Widget _buildPasswordFields() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: _showPasswordSection ? 240 : 0,
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            // Contraseña actual
+            TextField(
+              controller: _controllerCurrentPassword,
+              obscureText: _obscureCurrentPassword,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFFB5E6B7),
+                hintText: 'Contraseña actual',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureCurrentPassword ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureCurrentPassword = !_obscureCurrentPassword;
+                    });
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Nueva contraseña
+            TextField(
+              controller: _controllerNewPassword,
+              obscureText: _obscureNewPassword,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFFB5E6B7),
+                hintText: 'Nueva contraseña',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureNewPassword ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureNewPassword = !_obscureNewPassword;
+                    });
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Confirmar nueva contraseña
+            TextField(
+              controller: _controllerConfirmPassword,
+              obscureText: _obscureConfirmPassword,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFFB5E6B7),
+                hintText: 'Confirmar nueva contraseña',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    });
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
   
   @override
@@ -249,7 +413,39 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       ),
                     ),
-                    const SizedBox(height: 80),
+                    const SizedBox(height: 20),
+                    
+                    // Botón para mostrar/ocultar sección de cambio de contraseña
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _showPasswordSection = !_showPasswordSection;
+                        });
+                      },
+                      icon: Icon(
+                        _showPasswordSection ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        color: const Color(0xFF4CAF50),
+                      ),
+                      label: Text(
+                        _showPasswordSection ? 'Ocultar cambio de contraseña' : 'Cambiar contraseña',
+                        style: const TextStyle(
+                          color: Color(0xFF4CAF50),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF4CAF50)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      ),
+                    ),
+                    
+                    // Sección de cambio de contraseña (expandible)
+                    _buildPasswordFields(),
+                    
+                    const SizedBox(height: 40),
                     // Botón Guardar Cambios
                     SizedBox(
                       width: double.infinity,
@@ -283,6 +479,9 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
     _controllerNombre.dispose();
     _controllerTelefono.dispose();
     _controllerCarrera.dispose();
+    _controllerCurrentPassword.dispose();
+    _controllerNewPassword.dispose();
+    _controllerConfirmPassword.dispose();
     super.dispose();
   }
 }
