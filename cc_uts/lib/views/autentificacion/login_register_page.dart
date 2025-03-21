@@ -3,6 +3,7 @@ import 'package:cc_uts/controlador/Imagenes/SeleccionarImagen.dart';
 import 'package:cc_uts/controlador/Imagenes/SubirImagenFirebase.dart';
 import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
 import 'package:cc_uts/servicios/firebase/Autenticacion.dart';
+import 'package:cc_uts/views/autentificacion/forgot_password_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,7 +16,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  
   String? errorMesage = '';
   bool confirmarContrasena = true;
   bool isLogin = true;
@@ -50,8 +50,6 @@ class _LoginPageState extends State<LoginPage> {
       await AlmacenamientoUid.saveUID(userCredential.user!.uid);
 
       // Aquí puedes hacer algo con userCredential si lo necesitas
-
-      
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMesage = e.message;
@@ -80,8 +78,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (!RegExp(r'^3\d{9}$').hasMatch(_controllerTelefono.text)) {
-      _showErrorMessage(
-          "El teléfono es inválido");
+      _showErrorMessage("El teléfono es inválido");
       return;
     }
 
@@ -131,13 +128,12 @@ class _LoginPageState extends State<LoginPage> {
             'carrera': _controllerCarrera.text,
             'imagen': imageUrl,
             'uid': userCredential.user!.uid,
-            'chats': [],
             'publicaciones': [],
             'misArchivos': []
           });
 
-          await AlmacenamientoUid.saveUID(userCredential.user!.uid); //almacena el uid del usuario
-
+          await AlmacenamientoUid.saveUID(
+              userCredential.user!.uid); //almacena el uid del usuario
 
           print("Usuario creado con éxito");
         } catch (e) {
@@ -263,6 +259,18 @@ class _LoginPageState extends State<LoginPage> {
     return Text('Las contraseñas no coinciden');
   }
 
+  Widget _forgotPasswordButton() {
+    return TextButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+        );
+      },
+      child: const Text("¿Olvidaste tu contraseña?"),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -310,6 +318,9 @@ class _LoginPageState extends State<LoginPage> {
                         _espacio(40),
                       ],
                       _submitButton(),
+                      if (isLogin) ...[
+                        _forgotPasswordButton(),
+                      ],
                       _loginOrRegisterButton(),
                     ],
                   ),
@@ -322,4 +333,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-

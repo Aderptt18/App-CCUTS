@@ -36,35 +36,7 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
     setState(() => _image = null);
   }
 
-  Future<String> _nombreUsuario() async {
-    String? uid = await AlmacenamientoUid.getUID();
-    if (uid != null) {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
-          .collection('Usuarios')
-          .doc(uid)
-          .get();
-
-      if (doc.exists) {
-        return (doc.data() as Map<String, dynamic>)['nombre'] ?? '';
-      }
-    }
-    return '';
-  }
-
-  Future<String> _fotoUsuario() async {
-    String? uid = await AlmacenamientoUid.getUID();
-    if (uid != null) {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
-          .collection('Usuarios')
-          .doc(uid)
-          .get();
-
-      if (doc.exists) {
-        return (doc.data() as Map<String, dynamic>)['imagen'] ?? '';
-      }
-    }
-    return '';
-  }
+  
 
   Future<void> _publish() async {
     if (_titleController.text.isEmpty || _messageController.text.isEmpty) {
@@ -97,8 +69,6 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
         'imagenUrl': _imageUrl,
         'timestamp': FieldValue.serverTimestamp(),
         'userId': _uid,
-        'nombreUsuario': await _nombreUsuario(),
-        'fotoUsuario': await _fotoUsuario(),
       });
 
       String publicacionId = publicacionRef.id;
