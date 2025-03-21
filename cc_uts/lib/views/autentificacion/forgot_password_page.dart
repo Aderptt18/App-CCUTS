@@ -114,7 +114,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             ),
             padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
           ),
-          child: const Text("Enviar correo"),
+          child: const Text(
+            "Enviar correo",
+            style: TextStyle(color: Colors.black),
+          ),
         ),
         const SizedBox(height: 20),
         TextButton(

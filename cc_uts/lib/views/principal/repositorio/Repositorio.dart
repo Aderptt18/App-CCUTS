@@ -270,8 +270,8 @@ class _BuscarDocumentosState extends State<BuscarDocumentos> {
                       // Descargar el PDF
                       _descargarPDF(pdfUrl, fileName);
                     },
-                    icon: Icon(Icons.download),
-                    label: Text('Descargar documento PDF'),
+                    icon: Icon(Icons.download, color: Colors.black),
+                    label: Text('Descargar documento PDF', style: TextStyle(color: Colors.black),),
                   ),
                 ],
               ),

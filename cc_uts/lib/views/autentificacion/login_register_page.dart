@@ -228,7 +228,8 @@ class _LoginPageState extends State<LoginPage> {
           ),
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
         ),
-        child: Text(isLogin ? 'Ingresar' : 'Crear cuenta'));
+        child: Text(isLogin ? 'Ingresar' : 'Crear cuenta', style: TextStyle(color: Colors.black),),
+        );
   }
 
   //botón para subir imagen
