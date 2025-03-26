@@ -19,16 +19,20 @@ class _LoginPageState extends State<LoginPage> {
   String? errorMesage = '';
   bool confirmarContrasena = true;
   bool isLogin = true;
+  bool _isLoading = false;
 
-  //control imagenes
+  // Control de imagen de perfil
   String urlImagen = '';
   File? obtenerImagen;
 
-  //firebase
-  final firebase = FirebaseFirestore.instance;
-  //final User? user = Auth().currentUser;
+   // Control de visibilidad de contraseña
+  bool _passwordVisible = false;
+  bool _confirmPasswordVisible = false;
 
-  //controladores
+  // Firebase
+  final firebase = FirebaseFirestore.instance;
+
+  // Controladores
   final TextEditingController _controllerNombre = TextEditingController();
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
@@ -37,8 +41,10 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _controllerCarrera = TextEditingController();
   final TextEditingController _controllerTelefono = TextEditingController();
 
-  //ingresar
+  // Ingresar
   Future<void> signInWithEmailAndPassword() async {
+    setState(() => _isLoading = true);
+    
     try {
       final UserCredential userCredential =
           await Auth().signInWithEmailAndPassword(
@@ -48,30 +54,34 @@ class _LoginPageState extends State<LoginPage> {
 
       // Guardar el UID del usuario en el almacenamiento local
       await AlmacenamientoUid.saveUID(userCredential.user!.uid);
-
-      // Aquí puedes hacer algo con userCredential si lo necesitas
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMesage = e.message;
       });
       _showErrorMessage("Correo o contraseña incorrectos");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  //crear cuenta
+  // Crear cuenta
   Future<void> createUserWithEmailAndPassword() async {
-    if (!mounted) return; // Verificar si el widget está montado
+    if (!mounted) return;
+    
+    setState(() => _isLoading = true);
 
+    // Validaciones
     if (_controllerPassword.text.length < 6) {
       _showErrorMessage("La contraseña debe tener al menos 6 caracteres");
+      setState(() => _isLoading = false);
       return;
     }
 
     if (_controllerPassword.text != _controllerConfirmPassword.text) {
       if (mounted) {
-        // Verificar antes de llamar setState
         setState(() {
           confirmarContrasena = false;
+          _isLoading = false;
         });
       }
       return;
@@ -79,6 +89,7 @@ class _LoginPageState extends State<LoginPage> {
 
     if (!RegExp(r'^3\d{9}$').hasMatch(_controllerTelefono.text)) {
       _showErrorMessage("El teléfono es inválido");
+      setState(() => _isLoading = false);
       return;
     }
 
@@ -98,7 +109,6 @@ class _LoginPageState extends State<LoginPage> {
             obtenerImagen!,
             (String urlI) {
               if (mounted) {
-                // Verificar antes de actualizar el estado
                 setState(() {
                   urlImagen = urlI;
                 });
@@ -110,6 +120,7 @@ class _LoginPageState extends State<LoginPage> {
           print("Error al subir imagen: $e");
           if (mounted) {
             _showErrorMessage("Error al subir la imagen");
+            setState(() => _isLoading = false);
           }
           return;
         }
@@ -132,10 +143,16 @@ class _LoginPageState extends State<LoginPage> {
             'misArchivos': []
           });
 
-          await AlmacenamientoUid.saveUID(
-              userCredential.user!.uid); //almacena el uid del usuario
+          await AlmacenamientoUid.saveUID(userCredential.user!.uid);
 
           print("Usuario creado con éxito");
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cuenta creada con éxito'),
+              backgroundColor: Colors.green,
+            ),
+          );
         } catch (e) {
           print("Error al crear documento en Firestore: $e");
           if (mounted) {
@@ -147,7 +164,6 @@ class _LoginPageState extends State<LoginPage> {
     } on FirebaseAuthException catch (e) {
       print("Error de autenticación: ${e.message}");
       if (mounted) {
-        // Verificar antes de actualizar el estado
         setState(() {
           errorMesage = e.message;
         });
@@ -158,33 +174,34 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         _showErrorMessage("Error inesperado al crear la cuenta");
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  Widget _title() {
-    return const Text('');
   }
 
   Widget _imagenLogo() {
     return ClipOval(
       child: Image.asset(
-        'assets/Logo.png', // Ruta al logo en assets
-        height: 150, // Altura del logo
-        width: 150, // Ancho del logo para mantener la proporción
-        fit: BoxFit.cover, // Ajustar la imagen para cubrir el contenedor
-      ),
-    );
-  }
-
-  Widget _imagenSeleccionada() {
-    return ClipOval(
-      child: Image.file(
-        obtenerImagen!,
+        'assets/Logo.png',
         height: 150,
         width: 150,
         fit: BoxFit.cover,
       ),
     );
+  }
+
+  Future<void> _seleccionarImagen() async {
+    try {
+      final imagen = await getImage();
+      if (imagen != null) {
+        setState(() {
+          obtenerImagen = File(imagen.path);
+        });
+      }
+    } catch (e) {
+      print("Error al seleccionar imagen: $e");
+      _showErrorMessage("Error al seleccionar la imagen");
+    }
   }
 
   Widget _espacio(double size) {
@@ -193,17 +210,43 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _entryField(String title, TextEditingController controller) {
+  Widget _entryField(String title, TextEditingController controller, {bool isPassword = false, bool confirmPassword = false}) {
     return TextField(
-        controller: controller,
-        obscureText: title == 'Contraseña' ||
-            title ==
-                'Confirmar contraseña', // Ocultar texto si es contraseña o confirmar contraseña
-        decoration: InputDecoration(
-          labelText: title,
-          border: UnderlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(vertical: 10.0),
-        ));
+      controller: controller,
+      obscureText: isPassword 
+          ? (confirmPassword ? !_confirmPasswordVisible : !_passwordVisible)
+          : false,
+      keyboardType: title == 'Teléfono' ? TextInputType.phone : TextInputType.text,
+      decoration: InputDecoration(
+        hintText: title,
+        filled: true,
+        fillColor: Color(0xFFB8E6B9),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+        suffixIcon: isPassword 
+          ? IconButton(
+              icon: Icon(
+                confirmPassword 
+                  ? (_confirmPasswordVisible ? Icons.visibility : Icons.visibility_off)
+                  : (_passwordVisible ? Icons.visibility : Icons.visibility_off),
+                color: Colors.grey,
+              ),
+              onPressed: () {
+                setState(() {
+                  if (confirmPassword) {
+                    _confirmPasswordVisible = !_confirmPasswordVisible;
+                  } else {
+                    _passwordVisible = !_passwordVisible;
+                  }
+                });
+              },
+            )
+          : null,
+      ),
+    );
   }
 
   void _showErrorMessage(String message) {
@@ -215,49 +258,97 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  //boton para ingresar o crear cuenta
   Widget _submitButton() {
-    return ElevatedButton(
-        onPressed: isLogin
-            ? signInWithEmailAndPassword
-            : createUserWithEmailAndPassword,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
+    return ElevatedButton.icon(
+      onPressed: _isLoading 
+          ? null 
+          : (isLogin ? signInWithEmailAndPassword : createUserWithEmailAndPassword),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Color(0xFF4CAF50),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
         ),
-        child: Text(isLogin ? 'Ingresar' : 'Crear cuenta', style: TextStyle(color: Colors.black),),
-        );
-  }
-
-  //botón para subir imagen
-  Widget _subirImagen() {
-    return IconButton(
-      icon: Icon(Icons.upload),
-      onPressed: () async {
-        final imagen = await getImage();
-        setState(() {
-          obtenerImagen = File(imagen!.path);
-        });
-      },
+        padding: const EdgeInsets.symmetric(vertical: 15),
+      ),
+      icon: _isLoading 
+          ? Container(
+              width: 24,
+              height: 24,
+              padding: const EdgeInsets.all(2.0),
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 3,
+              ),
+            )
+          : Icon(isLogin ? Icons.login : Icons.person_add, color: Colors.black),
+      label: Text(
+        isLogin ? 'INGRESAR' : 'CREAR CUENTA',
+        style: TextStyle(color: Colors.black),
+      ),
     );
   }
+Widget _buildProfileImageSelector() {
+  return Stack(
+    alignment: Alignment.center,
+    children: [
+      // Avatar/Imagen
+      CircleAvatar(
+        radius: 75,
+        backgroundColor: Color(0xFFB8E6B9),
+        backgroundImage: obtenerImagen != null
+            ? FileImage(obtenerImagen!) as ImageProvider
+            : AssetImage('assets/Logo.png'),
+        // Removed the person icon that was appearing on top of the logo
+      ),
+      // Botón de edición en la esquina inferior derecha
+      Positioned(
+        bottom: 0,
+        right: 0,
+        child: GestureDetector(
+          onTap: _seleccionarImagen,
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Color(0xFF4CAF50),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+            ),
+            child: Icon(
+              Icons.camera_alt,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
 
   Widget _loginOrRegisterButton() {
     return TextButton(
-        onPressed: () {
-          setState(() {
-            isLogin = !isLogin;
-          });
-        },
-        child: Text(
-            isLogin ? '¿No tienes cuenta?, crea la tuya' : '¿Tienes cuenta?'));
+      onPressed: () {
+        setState(() {
+          isLogin = !isLogin;
+          // Reiniciar estado de errores al cambiar de modo
+          confirmarContrasena = true;
+        });
+      },
+      child: Text(
+        isLogin ? '¿No tienes cuenta? Crea la tuya' : '¿Ya tienes cuenta? Ingresar',
+        style: TextStyle(color: Color(0xFF4CAF50)),
+      ),
+    );
   }
 
   Widget _errorContrasena() {
-    return Text('Las contraseñas no coinciden');
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Text(
+        'Las contraseñas no coinciden',
+        style: TextStyle(color: Colors.red),
+      ),
+    );
   }
 
   Widget _forgotPasswordButton() {
@@ -268,69 +359,77 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
         );
       },
-      child: const Text("¿Olvidaste tu contraseña?"),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: LayoutBuilder(
-        //permite que la pantalla sea scrollable
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight,
-              ),
-              child: IntrinsicHeight(
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      _espacio(50),
-                      if (isLogin) ...[
-                        _imagenLogo(),
-                        _espacio(120),
-                        _entryField('Correo electrónico', _controllerEmail),
-                        _entryField('Contraseña', _controllerPassword),
-                        _espacio(20),
-                      ] else ...[
-                        obtenerImagen == null
-                            ? _imagenLogo()
-                            : _imagenSeleccionada(),
-                        _subirImagen(),
-                        _espacio(50),
-                        _entryField('Nombre', _controllerNombre),
-                        _entryField('Correo electrónico', _controllerEmail),
-                        _entryField('Contraseña', _controllerPassword),
-                        _entryField(
-                            'Confirmar contraseña', _controllerConfirmPassword),
-                        if (!confirmarContrasena) ...[
-                          _espacio(10),
-                          _errorContrasena(),
-                        ] else
-                          ...[], //este no hace nada
-                        _entryField('Carrera', _controllerCarrera),
-                        _entryField('Teléfono', _controllerTelefono),
-                        _espacio(40),
-                      ],
-                      _submitButton(),
-                      if (isLogin) ...[
-                        _forgotPasswordButton(),
-                      ],
-                      _loginOrRegisterButton(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
+      child: const Text(
+        "¿Olvidaste tu contraseña?",
+        style: TextStyle(color: Color(0xFF4CAF50)),
       ),
     );
   }
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      backgroundColor: Color(0xFF4CAF50),
+      elevation: 0,
+      title: Text(isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'),
+    ),
+    body: LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+            ),
+            child: IntrinsicHeight(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    _espacio(20),
+                    if (isLogin) ...[
+                      _espacio(30),
+                      Center(child: _imagenLogo()),
+                      _espacio(120),
+                      _entryField('Correo electrónico', _controllerEmail),
+                      _espacio(16),
+                      _entryField('Contraseña', _controllerPassword, isPassword: true),
+                      _espacio(40),
+                    ] else ...[
+                      Center(
+                        child: _buildProfileImageSelector(),
+                      ),
+                      _espacio(30),
+                      _entryField('Nombre', _controllerNombre),
+                      _espacio(16),
+                      _entryField('Correo electrónico', _controllerEmail),
+                      _espacio(16),
+                      _entryField('Contraseña', _controllerPassword, isPassword: true),
+                      _espacio(16),
+                      _entryField('Confirmar contraseña', _controllerConfirmPassword, isPassword: true, confirmPassword: true),
+                      if (!confirmarContrasena) ...[
+                        _errorContrasena(),
+                      ],
+                      _espacio(16),
+                      _entryField('Carrera', _controllerCarrera),
+                      _espacio(16),
+                      _entryField('Teléfono', _controllerTelefono),
+                      _espacio(20),
+                    ],
+                    _submitButton(),
+                    _espacio(16),
+                    if (isLogin) ...[
+                      _forgotPasswordButton(),
+                    ],
+                    _loginOrRegisterButton(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
 }

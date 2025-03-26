@@ -5,6 +5,7 @@ import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class PerfilUsuario extends StatefulWidget {
   const PerfilUsuario({Key? key}) : super(key: key);
@@ -18,6 +19,8 @@ class _PerfilUsuarioState extends State<PerfilUsuario> with SingleTickerProvider
   String? uid;
   Map<String, dynamic>? userData;
   bool isLoading = true;
+  bool isDeletingPublication = false;
+  bool isDeletingDocument = false;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final Map<String, bool> _expandedStates = {}; // Para controlar el estado de "Leer más..."
 
@@ -64,6 +67,149 @@ class _PerfilUsuarioState extends State<PerfilUsuario> with SingleTickerProvider
         isLoading = false;
       });
     }
+  }
+
+  // Función para eliminar una publicación
+  Future<void> _eliminarPublicacion(String publicacionId, String? imagenUrl) async {
+    setState(() {
+      isDeletingPublication = true;
+    });
+    
+    try {
+      // 1. Eliminar la imagen de Firebase Storage si existe
+      if (imagenUrl != null && imagenUrl.isNotEmpty) {
+        try {
+          // Obtener la referencia de la imagen en Firebase Storage
+          final ref = FirebaseStorage.instance.refFromURL(imagenUrl);
+          await ref.delete();
+        } catch (e) {
+          print('Error al eliminar la imagen: $e');
+          // Continuamos con el proceso aunque la imagen no se pueda eliminar
+        }
+      }
+
+      // 2. Eliminar el documento de la colección Publicaciones
+      await FirebaseFirestore.instance
+          .collection('Publicaciones')
+          .doc(publicacionId)
+          .delete();
+
+      // 3. Actualizar el array de publicaciones del usuario
+      if (uid != null) {
+        await FirebaseFirestore.instance
+            .collection('Usuarios')
+            .doc(uid)
+            .update({
+          'publicaciones': FieldValue.arrayRemove([publicacionId]),
+        });
+      }
+
+      // 4. Recargar los datos del usuario
+      await _loadUserData();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Publicación eliminada correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error al eliminar la publicación: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar la publicación: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isDeletingPublication = false;
+        });
+      }
+    }
+  }
+
+  // Función para eliminar un documento/archivo
+  Future<void> _eliminarDocumento(String documentoId, String? pdfUrl) async {
+    setState(() {
+      isDeletingDocument = true;
+    });
+    
+    try {
+      // 1. Eliminar el PDF de Firebase Storage si existe
+      if (pdfUrl != null && pdfUrl.isNotEmpty) {
+        try {
+          // Obtener la referencia del PDF en Firebase Storage
+          final ref = FirebaseStorage.instance.refFromURL(pdfUrl);
+          await ref.delete();
+        } catch (e) {
+          print('Error al eliminar el PDF: $e');
+          // Continuamos con el proceso aunque el PDF no se pueda eliminar
+        }
+      }
+
+      // 2. Eliminar el documento de la colección Documentos
+      await FirebaseFirestore.instance
+          .collection('Documentos')
+          .doc(documentoId)
+          .delete();
+
+      // 3. Actualizar el array de misArchivos del usuario
+      if (uid != null) {
+        await FirebaseFirestore.instance
+            .collection('Usuarios')
+            .doc(uid)
+            .update({
+          'misArchivos': FieldValue.arrayRemove([documentoId]),
+        });
+      }
+
+      // 4. Recargar los datos del usuario
+      await _loadUserData();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Documento eliminado correctamente'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error al eliminar el documento: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar el documento: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isDeletingDocument = false;
+        });
+      }
+    }
+  }
+
+  // Función para mostrar diálogo de confirmación antes de eliminar
+  Future<bool> _confirmarEliminacion(String tipo) async {
+    return await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Eliminar $tipo'),
+        content: Text('¿Estás seguro de que deseas eliminar este $tipo? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    ) ?? false;
   }
 
   // Función para cerrar sesión
@@ -138,7 +284,7 @@ class _PerfilUsuarioState extends State<PerfilUsuario> with SingleTickerProvider
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>EditarPerfilScreen(),
+                      builder: (context) => EditarPerfilScreen(),
                     ),
                   ).then((_) => _loadUserData());
                 },
@@ -162,7 +308,6 @@ class _PerfilUsuarioState extends State<PerfilUsuario> with SingleTickerProvider
           _buildInfoRow('Correo', userData!['correo'] ?? ''),
           _buildInfoRow('Telefono', userData!['telefono'] ?? ''),
           _buildInfoRow('Carrera', userData!['carrera'] ?? ''),
-          // Puedes agregar más campos aquí y se desplazarán correctamente
           if (userData!.containsKey('semestre'))
             _buildInfoRow('Semestre', userData!['semestre'] ?? ''),
           if (userData!.containsKey('direccion'))
@@ -271,109 +416,136 @@ class _PerfilUsuarioState extends State<PerfilUsuario> with SingleTickerProvider
 
         List<Map<String, dynamic>> publicacionesData = snapshot.data!;
 
-        return ListView.builder(
-          itemCount: publicacionesData.length,
-          itemBuilder: (context, index) {
-            var publicacion = publicacionesData[index];
-            String mensaje = publicacion['mensaje'] ?? '';
-            String titulo = publicacion['titulo'] ?? '';
-            String? imageUrl = publicacion['imagenUrl'];
-            String publicacionId = publicacion['id'];
-            
-            // Inicializar el estado de "Leer más..." si no existe
-            _expandedStates.putIfAbsent(publicacionId, () => false);
-            final isExpanded = _expandedStates[publicacionId]!;
-            final maxLength = 200; // Longitud inicial del texto
+        return isDeletingPublication
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                itemCount: publicacionesData.length,
+                itemBuilder: (context, index) {
+                  var publicacion = publicacionesData[index];
+                  String mensaje = publicacion['mensaje'] ?? '';
+                  String titulo = publicacion['titulo'] ?? '';
+                  String? imageUrl = publicacion['imagenUrl'];
+                  String publicacionId = publicacion['id'];
+                  
+                  // Inicializar el estado de "Leer más..." si no existe
+                  _expandedStates.putIfAbsent(publicacionId, () => false);
+                  final isExpanded = _expandedStates[publicacionId]!;
+                  final maxLength = 200; // Longitud inicial del texto
 
-            return Card(
-              margin: const EdgeInsets.all(8.0),
-              color: Colors.green[100],
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundImage: NetworkImage(publicacion['fotoUsuario'] ?? ''),
-                          radius: 20,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          publicacion['nombreUsuario'] ?? 'Usuario',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    if (titulo.isNotEmpty)
-                      Text(
-                        titulo,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                    const SizedBox(height: 8),
-                    // Mensaje con "Leer más..." implementado
-                    RichText(
-                      text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                        ),
+                  return Card(
+                    margin: const EdgeInsets.all(8.0),
+                    color: Colors.green[100],
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TextSpan(
-                            text: isExpanded
-                              ? mensaje
-                              : (mensaje.length > maxLength
-                                  ? '${mensaje.substring(0, maxLength)}... '
-                                  : mensaje),
-                          ),
-                          if (mensaje.length > maxLength)
-                            TextSpan(
-                              text: isExpanded ? 'Leer menos' : ' Leer más...',
-                              style: const TextStyle(
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // FIX 1: Wrapped this Row with Expanded to prevent overflow
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundImage: userData!['imagen'] != null && userData!['imagen'].isNotEmpty
+                                          ? CachedNetworkImageProvider(userData!['imagen']) as ImageProvider
+                                          : null,
+                                      radius: 20,
+                                      child: userData!['imagen'] == null || userData!['imagen'].isEmpty
+                                          ? const Icon(Icons.person, size: 20, color: Colors.white)
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    // FIX 2: Wrapped the Text with Expanded to handle long names
+                                    Expanded(
+                                      child: Text(
+                                        userData!['nombre'] ?? 'Usuario',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                        overflow: TextOverflow.ellipsis, // Add ellipsis for long text
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  setState(() {
-                                    _expandedStates[publicacionId] = !isExpanded;
-                                  });
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () async {
+                                  if (await _confirmarEliminacion('publicación')) {
+                                    await _eliminarPublicacion(publicacionId, imageUrl);
+                                  }
                                 },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          if (titulo.isNotEmpty)
+                            Text(
+                              titulo,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
+                          const SizedBox(height: 8),
+                          // Mensaje con "Leer más..." implementado
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: isExpanded
+                                    ? mensaje
+                                    : (mensaje.length > maxLength
+                                        ? '${mensaje.substring(0, maxLength)}... '
+                                        : mensaje),
+                                ),
+                                if (mensaje.length > maxLength)
+                                  TextSpan(
+                                    text: isExpanded ? 'Leer menos' : ' Leer más...',
+                                    style: const TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () {
+                                        setState(() {
+                                          _expandedStates[publicacionId] = !isExpanded;
+                                        });
+                                      },
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (imageUrl != null && imageUrl.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8.0),
+                              child: CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.green[300],
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => const Icon(Icons.error),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                    if (imageUrl != null && imageUrl.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8.0),
-                        child: CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.green[300],
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => const Icon(Icons.error),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+                  );
+                },
+              );
       },
     );
   }
@@ -433,39 +605,59 @@ class _PerfilUsuarioState extends State<PerfilUsuario> with SingleTickerProvider
 
         List<Map<String, dynamic>> archivosData = snapshot.data!;
 
-        return ListView.builder(
-          itemCount: archivosData.length,
-          itemBuilder: (context, index) {
-            var documento = archivosData[index];
+        return isDeletingDocument
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                itemCount: archivosData.length,
+                itemBuilder: (context, index) {
+                  var documento = archivosData[index];
 
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-              color: Colors.green[100],
-              child: ListTile(
-                leading: const Icon(
-                  Icons.picture_as_pdf,
-                  color: Colors.green,
-                  size: 40,
-                ),
-                title: Text(
-                  documento['titulo'] ?? 'Sin título',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(documento['descripcion'] ?? 'Sin descripción'),
-                    Text(documento['institucion'] ?? 'Sin institución'),
-                  ],
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  _mostrarDetallesDocumento(context, documento);
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    color: Colors.green[100],
+                    child: ListTile(
+                      leading: const Icon(
+                        Icons.picture_as_pdf,
+                        color: Colors.green,
+                        size: 40,
+                      ),
+                      title: Text(
+                        documento['titulo'] ?? 'Sin título',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis, // FIX 3: Add ellipsis for long titles
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            documento['descripcion'] ?? 'Sin descripción',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis, // FIX 4: Add ellipsis for long descriptions
+                          ),
+                          Text(
+                            documento['institucion'] ?? 'Sin institución',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis, // FIX 5: Add ellipsis for long institution names
+                          ),
+                        ],
+                      ),
+                      // FIX 6: Remove the Row in trailing and use IconButton directly
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          if (await _confirmarEliminacion('documento')) {
+                            await _eliminarDocumento(documento['id'], documento['urlPdf']);
+                          }
+                        },
+                      ),
+                      onTap: () {
+                        _mostrarDetallesDocumento(context, documento);
+                      },
+                    ),
+                  );
                 },
-              ),
-            );
-          },
-        );
+              );
       },
     );
   }
@@ -531,9 +723,25 @@ class _PerfilUsuarioState extends State<PerfilUsuario> with SingleTickerProvider
                       margin: const EdgeInsets.only(bottom: 16),
                     ),
                   ),
-                  Text(
-                    documento['titulo'] ?? 'Sin título',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          documento['titulo'] ?? 'Sin título',
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          Navigator.pop(context); // Cerrar el modal
+                          if (await _confirmarEliminacion('documento')) {
+                            await _eliminarDocumento(documento['id'], documento['urlPdf']);
+                          }
+                        },
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -587,26 +795,6 @@ class _PerfilUsuarioState extends State<PerfilUsuario> with SingleTickerProvider
           },
         );
       },
-    );
-  }
-}
-
-// Widget de editar perfil (implementación básica)
-class EditarPerfil extends StatelessWidget {
-  final Map<String, dynamic>? userData;
-
-  const EditarPerfil({Key? key, required this.userData}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Editar Perfil'),
-        backgroundColor: Colors.green,
-      ),
-      body: const Center(
-        child: Text('Aquí va el formulario para editar el perfil'),
-      ),
     );
   }
 }
