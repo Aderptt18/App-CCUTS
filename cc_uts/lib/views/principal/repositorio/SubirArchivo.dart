@@ -19,6 +19,8 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
   int _uploadsToday = 0;
   final int _maxUploadsPerDay = 3;
   bool _fechaSeleccionada = false;
+  bool _terminosAceptados = false;
+
   final _tituloController = TextEditingController();
   final _autorController = TextEditingController();
   final _descripcionController = TextEditingController();
@@ -72,6 +74,18 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
 
   Future<void> _publicarDocumento() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (!_terminosAceptados) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('Debes aceptar los términos y condiciones para continuar'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     if (_selectedPDF == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Por favor seleccione un archivo PDF')),
@@ -99,7 +113,8 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
       );
 
       // Agregar documento a la colección Documentos
-      DocumentReference documentoRef = await FirebaseFirestore.instance.collection('Documentos').add({
+      DocumentReference documentoRef =
+          await FirebaseFirestore.instance.collection('Documentos').add({
         'titulo': _tituloController.text,
         'autor': _autorController.text,
         'descripcion': _descripcionController.text,
@@ -118,10 +133,7 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
       String documentoId = documentoRef.id;
 
       // Actualizar el array misArchivos del usuario
-      await FirebaseFirestore.instance
-          .collection('Usuarios')
-          .doc(uid)
-          .update({
+      await FirebaseFirestore.instance.collection('Usuarios').doc(uid).update({
         'misArchivos': FieldValue.arrayUnion([documentoId]),
       });
 
@@ -147,13 +159,65 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
     }
 
     Navigator.pop(context);
-  /*
+    /*
     _tituloController.clear();
     _autorController.clear();
     _descripcionController.clear();
     _resumenController.clear();
     _palabrasClaveController.clear();
     _institucionController.clear();*/
+  }
+
+  void _mostrarTerminosCondiciones() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Términos y Condiciones'),
+          content: SingleChildScrollView(
+            child: Text(
+              '''
+Antes de subir cualquier documento o archivo a esta aplicación, es importante que leas y aceptes los siguientes términos y condiciones.
+
+Aceptación de los términos:
+Al utilizar la funcionalidad de subida de archivos, aceptas que el contenido que compartas será accesible para otros usuarios de la aplicación y que no podrás reclamar privacidad sobre los documentos subidos.
+
+Responsabilidad del usuario:
+- Eres el único responsable del contenido que subes.
+- Garantizas que los archivos no contienen información sensible o confidencial que no desees compartir con otros usuarios.
+- Aseguras que tienes los derechos de propiedad intelectual o los permisos necesarios para compartir el contenido.
+- No debes subir contenido que sea ofensivo, ilegal, difamatorio o que infrinja derechos de terceros.
+
+Uso de la información compartida:
+- Los archivos subidos estarán disponibles para cualquier usuario de la aplicación.
+- La aplicación no se hace responsable del uso que otros usuarios puedan darle a los documentos compartidos.
+- Se recomienda a los usuarios no subir información privada o datos personales.
+
+Eliminación de contenido:
+- Nos reservamos el derecho de eliminar cualquier archivo que consideremos inapropiado o que infrinja estos términos.
+- Si deseas eliminar un archivo que subiste, puedes hacerlo desde la aplicación.
+
+Exención de responsabilidad:
+- La aplicación no garantiza la seguridad, confidencialidad ni integridad de los archivos subidos.
+- No nos hacemos responsables de la distribución no autorizada de los archivos por parte de otros usuarios.
+
+Modificaciones a los términos:
+Nos reservamos el derecho de modificar estos términos en cualquier momento. Cualquier cambio será notificado dentro de la aplicación.
+''',
+              style: TextStyle(fontSize: 14),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cerrar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -300,6 +364,30 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
                     ),
                   ],
                 ),
+              ),
+                Row(
+                children: [
+                  Checkbox(
+                    value: _terminosAceptados,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _terminosAceptados = value ?? false;
+                      });
+                    },
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _mostrarTerminosCondiciones,
+                      child: Text(
+                        'He leído y acepto los términos y condiciones',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 20),
               ElevatedButton(
