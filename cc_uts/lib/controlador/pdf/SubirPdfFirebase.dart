@@ -12,7 +12,7 @@ Future<String> subirPDF(PlatformFile pdfFile, Function(String) updateUrl, TextEd
     final String nameFile = "${DateTime.now().millisecondsSinceEpoch}_${controller.text}.pdf";
     
     // Referencia al archivo en Firebase Storage (en la carpeta "PDFs")
-    final Reference ref = storage.ref().child("PDFs").child(nameFile);
+    final Reference ref = storage.ref().child("PDFs").child(nameFile);//
 
     // Configurar metadata para el archivo PDF
     final SettableMetadata metadata = SettableMetadata(
