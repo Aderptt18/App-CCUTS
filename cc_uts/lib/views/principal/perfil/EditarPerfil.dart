@@ -110,60 +110,79 @@ class _EditarPerfilScreenState extends State<EditarPerfilScreen> {
     });
   }
   
-  Future<void> _guardarCambios() async {
-    setState(() {
-      _isLoading = true;
+ Future<void> _guardarCambios() async {
+  setState(() {
+    _isLoading = true;
+  });
+  
+  try {
+    // Validación de teléfono (opcional, pero si se proporciona debe comenzar con 3 y tener 10 dígitos)
+    if (_controllerTelefono.text.isNotEmpty && !RegExp(r'^3\d{9}$').hasMatch(_controllerTelefono.text)) {
+      _showErrorMessage("Número de teléfono es inválido");
+      setState(() => _isLoading = false);
+      return;
+    }
+    
+    // Validación de nombre (no vacío y mínimo 3 caracteres)
+    if (_controllerNombre.text.trim().isEmpty || _controllerNombre.text.trim().length < 3) {
+      _showErrorMessage("El nombre debe tener al menos 3 caracteres");
+      setState(() => _isLoading = false);
+      return;
+    }
+    
+    // La carrera puede quedar vacía (no se valida)
+    
+    // Si se seleccionó una nueva imagen
+    if (_selectedImage != null) {
+      // Eliminar imagen anterior
+      await _eliminarImagenAnterior();
+      
+      // Subir nueva imagen
+      imageUrl = await subirImagenPerfil(
+        _selectedImage!, 
+        _updateImageUrl, 
+        _controllerNombre
+      );
+    }
+    
+    // Actualizar datos en Firestore
+    await FirebaseFirestore.instance
+        .collection('Usuarios')
+        .doc(userId)
+        .update({
+      'nombre': _controllerNombre.text.trim(),
+      'telefono': _controllerTelefono.text.trim(),
+      'carrera': _controllerCarrera.text.trim(),
+      'imagen': imageUrl,
     });
     
-    try {
-      // Si se seleccionó una nueva imagen
-      if (_selectedImage != null) {
-        // Eliminar imagen anterior
-        await _eliminarImagenAnterior();
-        
-        // Subir nueva imagen
-        imageUrl = await subirImagenPerfil(
-          _selectedImage!, 
-          _updateImageUrl, 
-          _controllerNombre
-        );
-      }
-      
-      // Actualizar datos en Firestore
-      await FirebaseFirestore.instance
-          .collection('Usuarios')
-          .doc(userId)
-          .update({
-        'nombre': _controllerNombre.text,
-        'telefono': _controllerTelefono.text,
-        'carrera': _controllerCarrera.text,
-        'imagen': imageUrl,
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Perfil actualizado correctamente'),
+        backgroundColor: Colors.green,
+      )
+    );
+    
+    // Si hay datos de contraseña, intentar cambiar la contraseña
+    if (_controllerCurrentPassword.text.isNotEmpty && 
+        _controllerNewPassword.text.isNotEmpty &&
+        _controllerConfirmPassword.text.isNotEmpty) {
+      await _cambiarContrasena();
+    }
+    
+    // Regresar a la pantalla anterior
+    Navigator.pop(context);
+  } catch (e) {
+    print("Error al guardar cambios: $e");
+    _showErrorMessage("Error al guardar los cambios");
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
       });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Perfil actualizado correctamente')),
-      );
-      
-      // Si hay datos de contraseña, intentar cambiar la contraseña
-      if (_controllerCurrentPassword.text.isNotEmpty && 
-          _controllerNewPassword.text.isNotEmpty &&
-          _controllerConfirmPassword.text.isNotEmpty) {
-        await _cambiarContrasena();
-      }
-      
-      // Regresar a la pantalla anterior
-      Navigator.pop(context);
-    } catch (e) {
-      print("Error al guardar cambios: $e");
-      _showErrorMessage("Error al guardar los cambios");
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
+}
   
   Future<void> _cambiarContrasena() async {
     // Verificar que las contraseñas coinciden

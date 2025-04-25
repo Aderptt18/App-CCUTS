@@ -129,7 +129,7 @@ class _LoginPageState extends State<LoginPage> {
       // 3. Crear el documento en Firestore
       if (userCredential.user != null) {
         try {
-          await firebase
+          await firebase 
               .collection('Usuarios')
               .doc(userCredential.user!.uid)
               .set({
@@ -145,7 +145,6 @@ class _LoginPageState extends State<LoginPage> {
 
           await AlmacenamientoUid.saveUID(userCredential.user!.uid);
 
-          print("Usuario creado con éxito");
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

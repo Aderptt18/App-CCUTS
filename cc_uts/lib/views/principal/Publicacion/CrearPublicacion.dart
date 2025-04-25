@@ -1,5 +1,6 @@
 import 'package:cc_uts/controlador/Imagenes/SeleccionarImagen.dart';
 import 'package:cc_uts/controlador/Imagenes/SubirImagenFirebase.dart';
+import 'package:cc_uts/controlador/Pantallas.dart';
 import 'package:cc_uts/servicios/almacenamiento/almacenamientoUid.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -38,68 +39,81 @@ class _CrearPublicacionState extends State<CrearPublicacion> {
 
   
 
-  Future<void> _publish() async {
-    if (_titleController.text.isEmpty || _messageController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Por favor, completa todos los campos'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
+ Future<void> _publish() async {
+  if (_titleController.text.isEmpty || _messageController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Por favor, completa todos los campos'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  setState(() => _isLoading = true);
+
+  try {
+    if (_image != null) {
+      await subirImagenPublicacion(_image!, updateUrl, _titleController);
     }
 
-    setState(() => _isLoading = true);
-
-    try {
-      if (_image != null) {
-        await subirImagenPublicacion(_image!, updateUrl, _titleController);
-      }
-
-      String? _uid = await AlmacenamientoUid.getUID();
-      if (_uid == null) {
-        throw Exception("No se pudo obtener el UID del usuario");
-      }
-
-      DocumentReference publicacionRef = await FirebaseFirestore.instance
-          .collection('Publicaciones')
-          .add({
-        'titulo': _titleController.text,
-        'mensaje': _messageController.text,
-        'imagenUrl': _imageUrl,
-        'timestamp': FieldValue.serverTimestamp(),
-        'userId': _uid,
-      });
-
-      String publicacionId = publicacionRef.id;
-
-      await FirebaseFirestore.instance
-          .collection('Usuarios')
-          .doc(_uid)
-          .update({
-        'publicaciones': FieldValue.arrayUnion([publicacionId]),
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Publicación creada con éxito'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al publicar: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    String? _uid = await AlmacenamientoUid.getUID();
+    if (_uid == null) {
+      throw Exception("No se pudo obtener el UID del usuario");
     }
+
+    DocumentReference publicacionRef = await FirebaseFirestore.instance
+        .collection('Publicaciones') 
+        .add({
+      'titulo': _titleController.text,
+      'mensaje': _messageController.text,
+      'imagenUrl': _imageUrl,
+      'timestamp': FieldValue.serverTimestamp(),
+      'userId': _uid,
+    });
+
+    String publicacionId = publicacionRef.id;
+
+    await FirebaseFirestore.instance
+        .collection('Usuarios')
+        .doc(_uid)
+        .update({
+      'publicaciones': FieldValue.arrayUnion([publicacionId]),
+    });
+
+    // Mostrar mensaje de éxito
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Publicación creada con éxito'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    
+    // Limpiar campos del formulario
     _titleController.clear();
     _messageController.clear();
     setState(() => _image = null);
+    
+    
+    // Navegar a la pantalla de publicaciones
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const Pantallas(),
+      ),
+    );
+    
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error al publicar: $e'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
   }
+}
 
   Widget _buildImagePicker() {
     return Container(

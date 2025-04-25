@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen>
     )..forward();
 
     // Temporizador para redirigir después de 3 segundos
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 1), () {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const Acceso()),

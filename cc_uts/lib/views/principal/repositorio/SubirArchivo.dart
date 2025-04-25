@@ -113,7 +113,7 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
       );
 
       // Agregar documento a la colección Documentos
-      DocumentReference documentoRef =
+      DocumentReference documentoRef = 
           await FirebaseFirestore.instance.collection('Documentos').add({
         'titulo': _tituloController.text,
         'autor': _autorController.text,
@@ -159,13 +159,6 @@ class _SubirDocumentoScreenState extends State<SubirDocumento> {
     }
 
     Navigator.pop(context);
-    /*
-    _tituloController.clear();
-    _autorController.clear();
-    _descripcionController.clear();
-    _resumenController.clear();
-    _palabrasClaveController.clear();
-    _institucionController.clear();*/
   }
 
   void _mostrarTerminosCondiciones() {
@@ -202,7 +195,7 @@ Exención de responsabilidad:
 - No nos hacemos responsables de la distribución no autorizada de los archivos por parte de otros usuarios.
 
 Modificaciones a los términos:
-Nos reservamos el derecho de modificar estos términos en cualquier momento. Cualquier cambio será notificado dentro de la aplicación.
+Nos reservamos el derecho de modificar estos términos en cualquier momento. 
 ''',
               style: TextStyle(fontSize: 14),
             ),
@@ -237,33 +230,33 @@ Nos reservamos el derecho de modificar estos términos en cualquier momento. Cua
               _buildTextField(
                 controller: _tituloController,
                 hintText: 'Título...',
-                maxLength: 150,
+                maxLength: 300, // Duplicado de 150
               ),
               _buildTextField(
                 controller: _autorController,
                 hintText: 'Autor...',
-                maxLength: 100,
+                maxLength: 200, // Duplicado de 100
               ),
               _buildTextField(
                 controller: _descripcionController,
                 hintText: 'Descripción breve..',
-                maxLength: 300,
+                maxLength: 600, // Duplicado de 300
               ),
               _buildTextField(
                 controller: _resumenController,
                 hintText: 'Resumen...',
-                maxLength: 3000,
+                maxLength: 6000, // Duplicado de 3000
                 expandable: true,
               ),
               _buildTextField(
                 controller: _palabrasClaveController,
                 hintText: 'Palabras clave...',
-                maxLength: 50,
+                maxLength: 100, // Duplicado de 50
               ),
               _buildTextField(
                 controller: _institucionController,
                 hintText: 'Institución...',
-                maxLength: 200,
+                maxLength: 400, // Duplicado de 200
               ),
               InkWell(
                 onTap: () async {

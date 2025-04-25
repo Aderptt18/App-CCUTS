@@ -16,8 +16,6 @@ class _BuscarDocumentosState extends State<BuscarDocumentos> {
   String _searchText = '';
 
   @override
-
-  
   void initState() {
     super.initState();
     _searchController.addListener(() {
@@ -33,62 +31,54 @@ class _BuscarDocumentosState extends State<BuscarDocumentos> {
     super.dispose();
   }
 
-  // Función para descargar el PDF
   Future<void> _descargarPDF(String url, String fileName) async {
-  // Solicitar permisos de almacenamiento
-  final status = await Permission.storage.request();
-  if (!status.isGranted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Permisos de almacenamiento denegados')),
+    final status = await Permission.storage.request();
+    if (!status.isGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Permisos de almacenamiento denegados')),
+      );
+      return;
+    }
+
+    Directory? downloadsDir;
+    if (Platform.isAndroid) {
+      downloadsDir = Directory('/storage/emulated/0/Download');
+    } else if (Platform.isIOS) {
+      downloadsDir = await getApplicationDocumentsDirectory();
+    } else {
+      downloadsDir = await getExternalStorageDirectory();
+    }
+
+    final path = downloadsDir?.path;
+
+    if (path == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo acceder al almacenamiento')),
+      );
+      return;
+    }
+
+    final taskId = await FlutterDownloader.enqueue(
+      url: url,
+      savedDir: path,
+      fileName: fileName,
+      showNotification: true,
+      openFileFromNotification: true,
     );
-    return;
+
+    if (taskId != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Descarga iniciada. Revisa las notificaciones para ver el progreso.'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al iniciar la descarga')),
+      );
+    }
   }
-
-  // Obtener la ruta de la carpeta de descargas
-  Directory? downloadsDir;
-  if (Platform.isAndroid) {
-    // En Android, usar la carpeta de descargas
-    downloadsDir = Directory('/storage/emulated/0/Download');
-  } else if (Platform.isIOS) {
-    // En iOS, usar la carpeta de documentos
-    downloadsDir = await getApplicationDocumentsDirectory();
-  } else {
-    // Fallback a la carpeta externa de almacenamiento
-    downloadsDir = await getExternalStorageDirectory();
-  }
-
-  final path = downloadsDir?.path;
-
-  if (path == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('No se pudo acceder al almacenamiento')),
-    );
-    return;
-  }
-
-  // Descargar el archivo
-  final taskId = await FlutterDownloader.enqueue(
-    url: url,
-    savedDir: path,
-    fileName: fileName,
-    showNotification: true,
-    openFileFromNotification: true,
-  );
-
-  if (taskId != null) {
-    // Mostrar mensaje informando al usuario que revise las notificaciones
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Descarga iniciada. Revisa las notificaciones para ver el progreso.'),
-        duration: Duration(seconds: 4),
-      ),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error al iniciar la descarga')),
-    );
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -119,8 +109,6 @@ class _BuscarDocumentosState extends State<BuscarDocumentos> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('Documentos')
-                  .where('titulo', isGreaterThanOrEqualTo: _searchText)
-                  .where('titulo', isLessThan: _searchText + 'z')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -135,10 +123,22 @@ class _BuscarDocumentosState extends State<BuscarDocumentos> {
                   return Center(child: Text('No se encontraron documentos'));
                 }
 
+                // Filtrar localmente los documentos que coincidan con la búsqueda (case-insensitive)
+                final filteredDocs = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final titulo = data['titulo']?.toString().toLowerCase() ?? '';
+                  final searchTerm = _searchText.toLowerCase();
+                  return titulo.contains(searchTerm);
+                }).toList();
+
+                if (filteredDocs.isEmpty) {
+                  return Center(child: Text('No se encontraron documentos'));
+                }
+
                 return ListView.builder(
-                  itemCount: snapshot.data!.docs.length,
+                  itemCount: filteredDocs.length,
                   itemBuilder: (context, index) {
-                    var documento = snapshot.data!.docs[index];
+                    var documento = filteredDocs[index];
                     var data = documento.data() as Map<String, dynamic>;
 
                     return Card(
@@ -187,7 +187,6 @@ class _BuscarDocumentosState extends State<BuscarDocumentos> {
     );
   }
 
-  // Función para mostrar detalles del documento en un modal
   void _mostrarDetallesDocumento(BuildContext context, Map<String, dynamic> documento) {
     showModalBottomSheet(
       context: context,
@@ -263,15 +262,12 @@ class _BuscarDocumentosState extends State<BuscarDocumentos> {
                       ),
                     ),
                     onPressed: () {
-                      // Obtener la URL del PDF y el nombre del archivo
                       String pdfUrl = documento['urlPdf'] ?? '';
                       String fileName = documento['pdf'] ?? 'documento.pdf';
-
-                      // Descargar el PDF
                       _descargarPDF(pdfUrl, fileName);
                     },
                     icon: Icon(Icons.download, color: Colors.black),
-                    label: Text('Descargar documento PDF', style: TextStyle(color: Colors.black),),
+                    label: Text('Descargar documento PDF', style: TextStyle(color: Colors.black)),
                   ),
                 ],
               ),
